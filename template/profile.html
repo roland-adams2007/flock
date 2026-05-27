@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flock — Roland Adams</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap"
+        rel="stylesheet">
+    <style>
+        @import "https://cdn.jsdelivr.net/npm/tailwindcss@4/cdn.min.css";
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0c0c0e;
+            --surface: #141416;
+            --surface2: #1c1c1f;
+            --border: #252528;
+            --border2: #2e2e32;
+            --text: #f0ede8;
+            --text2: #9995a0;
+            --text3: #5c5966;
+            --accent: #c8f058;
+            --accent-dim: #c8f05820;
+            --accent-text: #0c0c0e;
+            --red: #ff5e5e;
+            --red-dim: #ff5e5e18;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Instrument Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .serif {
+            font-family: 'Instrument Serif', serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+        }
+
+        .layout {
+            max-width: 1060px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 220px 1fr 230px;
+            min-height: 100vh;
+        }
+
+        .sidebar-left {
+            border-right: 1px solid var(--border);
+            padding: 1.75rem 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            overflow-y: auto;
+        }
+
+        .brand {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.8rem;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+            padding: 0 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .brand-dot {
+            width: 9px;
+            height: 9px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin-top: 2px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.65rem 0.75rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text2);
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: var(--surface2);
+        }
+
+        .nav-item.active {
+            color: var(--text);
+            background: var(--surface2);
+            font-weight: 600;
+        }
+
+        .nav-item .badge {
+            margin-left: auto;
+            background: var(--accent);
+            color: var(--accent-text);
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.15rem 0.45rem;
+            border-radius: 9999px;
+        }
+
+        .cta-btn {
+            background: var(--accent);
+            color: var(--accent-text);
+            border: none;
+            border-radius: 12px;
+            padding: 0.8rem;
+            font-family: 'Instrument Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: auto;
+            transition: all 0.15s;
+            letter-spacing: 0.01em;
+        }
+
+        .cta-btn:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px var(--accent-dim);
+        }
+
+        .me-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.65rem 0.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 0.75rem;
+            transition: background 0.15s;
+        }
+
+        .me-row:hover {
+            background: var(--surface2);
+        }
+
+        .avatar {
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 0.8rem;
+        }
+
+        .profile-col {
+            border-right: 1px solid var(--border);
+            min-height: 100vh;
+        }
+
+        .profile-header-bar {
+            position: sticky;
+            top: 0;
+            background: rgba(12, 12, 14, 0.88);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.9rem 1.25rem;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+        }
+
+        .back-btn {
+            background: var(--surface2);
+            border: none;
+            color: var(--text2);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .back-btn:hover {
+            background: var(--border2);
+            color: var(--text);
+        }
+
+        .cover {
+            height: 140px;
+            background: linear-gradient(125deg, #111a0d 0%, #1c2e15 40%, #c8f05812 80%, #1a1f12 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(45deg,
+                    transparent,
+                    transparent 28px,
+                    rgba(200, 240, 88, 0.03) 28px,
+                    rgba(200, 240, 88, 0.03) 29px);
+        }
+
+        .profile-info-section {
+            padding: 0 1.25rem 0;
+            position: relative;
+        }
+
+        .profile-avatar-wrap {
+            position: absolute;
+            top: -36px;
+            left: 1.25rem;
+        }
+
+        .profile-avatar {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: #1e2d14;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.3rem;
+            border: 3px solid var(--bg);
+            flex-shrink: 0;
+        }
+
+        .edit-btn {
+            background: transparent;
+            border: 1.5px solid var(--border2);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 0.42rem 1.1rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Instrument Sans', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .edit-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.85rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: baseline;
+            gap: 0.3rem;
+        }
+
+        .stat-num {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text3);
+        }
+
+        .profile-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-top: 1.1rem;
+        }
+
+        .ptab {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text3);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: 'Instrument Sans', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .ptab:hover {
+            color: var(--text2);
+        }
+
+        .ptab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .post-card {
+            padding: 1.1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.12s;
+            cursor: pointer;
+            animation: fadeUp 0.3s ease both;
+        }
+
+        .post-card:hover {
+            background: var(--surface);
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .post-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .post-handle {
+            color: var(--text3);
+            font-size: 0.82rem;
+        }
+
+        .post-time {
+            color: var(--text3);
+            font-size: 0.82rem;
+        }
+
+        .post-time::before {
+            content: '·';
+            margin-right: 0.4rem;
+        }
+
+        .post-text {
+            font-size: 0.93rem;
+            line-height: 1.6;
+            color: var(--text);
+            white-space: pre-line;
+            margin-bottom: 0.75rem;
+        }
+
+        .post-img-placeholder {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 0.85rem;
+            height: 210px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--text3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.1rem;
+        }
+
+        .act {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text3);
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-family: 'Instrument Sans', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .act:hover {
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .act.liked {
+            color: var(--red);
+        }
+
+        .act.liked:hover {
+            background: var(--red-dim);
+        }
+
+        .sidebar-right {
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .widget {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1rem;
+        }
+
+        .widget-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1rem;
+            margin-bottom: 0.85rem;
+            color: var(--text);
+        }
+
+        .person-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.5rem 0;
+        }
+
+        .person-row+.person-row {
+            border-top: 1px solid var(--border);
+        }
+
+        .follow-btn {
+            margin-left: auto;
+            background: transparent;
+            border: 1px solid var(--border2);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Instrument Sans', sans-serif;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .follow-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .follow-btn.on {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-text);
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.7rem;
+            background: var(--surface2);
+            border-radius: 8px;
+            font-size: 0.78rem;
+            color: var(--text2);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin: 0.2rem;
+        }
+
+        .tag-pill:hover {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .modal-bg {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-bg.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 18px;
+            padding: 1.5rem;
+            width: min(500px, 94vw);
+            transform: scale(0.96);
+            transition: transform 0.2s;
+        }
+
+        .modal-bg.open .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.1rem;
+        }
+
+        .close-btn {
+            background: var(--surface2);
+            border: none;
+            color: var(--text2);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+
+        .close-btn:hover {
+            background: var(--border2);
+            color: var(--text);
+        }
+
+        .compose-textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: 'Instrument Sans', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text);
+            resize: none;
+            line-height: 1.5;
+        }
+
+        .compose-textarea::placeholder {
+            color: var(--text3);
+        }
+
+        .post-btn-sm {
+            background: var(--accent);
+            color: var(--accent-text);
+            border: none;
+            border-radius: 8px;
+            padding: 0.45rem 1.1rem;
+            font-family: 'Instrument Sans', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .post-btn-sm:hover {
+            opacity: 0.85;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text3);
+            cursor: pointer;
+            padding: 0.35rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .icon-btn:hover {
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px;
+            padding: 1rem 1.25rem;
+        }
+
+        .media-cell {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text3);
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .media-cell:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 820px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-left,
+            .sidebar-right {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <aside class="sidebar-left">
+            <div class="brand">flock <div class="brand-dot"></div>
+            </div>
+
+            <button class="nav-item" onclick="setActive(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                Feed
+            </button>
+
+            <button class="nav-item" onclick="openNotifModal(); setActive(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                Notifications
+                <span class="badge">4</span>
+            </button>
+
+            <button class="nav-item" onclick="setActive(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                Following
+            </button>
+
+            <button class="nav-item active" onclick="setActive(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                Profile
+            </button>
+
+            <button class="nav-item" onclick="setActive(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+                Saved
+            </button>
+
+            <button class="cta-btn" onclick="openComposeModal()">+ New Post</button>
+
+            <div class="me-row">
+                <div class="avatar" style="width:36px;height:36px;background:#1e2d14;color:var(--accent);">RA</div>
+                <div style="min-width:0;">
+                    <div
+                        style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        Roland Adams</div>
+                    <div style="font-size:0.73rem;color:var(--text3);">@R_coredev</div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="profile-col">
+
+            <div class="profile-header-bar">
+                <button class="back-btn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                </button>
+                <div>
+                    <div style="font-weight:700;font-size:0.95rem;">Roland Adams</div>
+                    <div style="font-size:0.75rem;color:var(--text3);" id="header-post-count">312 posts</div>
+                </div>
+            </div>
+
+            <div class="cover"></div>
+
+            <div class="profile-info-section" style="padding-top: 0;">
+                <div style="display:flex;justify-content:flex-end;padding-top:0.75rem;margin-bottom:2.5rem;">
+                    <button class="edit-btn" onclick="openEditModal()">Edit profile</button>
+                </div>
+
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar">RA</div>
+                </div>
+
+                <div style="margin-bottom:0.3rem;">
+                    <div style="font-weight:700;font-size:1.15rem;letter-spacing:-0.01em;">Roland Adams</div>
+                    <div style="color:var(--text3);font-size:0.85rem;margin-top:0.1rem;">@R_coredev</div>
+                </div>
+
+                <p style="font-size:0.875rem;color:var(--text2);line-height:1.6;margin-top:0.6rem;max-width:420px;">
+                    Full-stack dev building stuff on the internet. Lagos, NG 🇳🇬<br>
+                    Open to collab · ships fast · loves clean code.
+                </p>
+
+                <div style="display:flex;align-items:center;gap:1.25rem;margin-top:0.75rem;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--text3);">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        Lagos, Nigeria
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--text3);">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                        rolandadams.dev
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--text3);">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Joined March 2022
+                    </div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-item">
+                        <span class="stat-num">148</span>
+                        <span class="stat-label">Following</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">2.4K</span>
+                        <span class="stat-label">Followers</span>
+                    </div>
+                </div>
+
+                <div class="profile-tabs" id="profile-tabs">
+                    <button class="ptab active" onclick="switchTab('posts', this)">Posts</button>
+                    <button class="ptab" onclick="switchTab('replies', this)">Replies</button>
+                    <button class="ptab" onclick="switchTab('media', this)">Media</button>
+                    <button class="ptab" onclick="switchTab('likes', this)">Likes</button>
+                </div>
+            </div>
+
+            <div id="tab-content"></div>
+
+        </main>
+
+        <aside class="sidebar-right">
+            <div style="position:relative;">
+                <input type="text" placeholder="Search flock…"
+                    style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.55rem 0.9rem 0.55rem 2.35rem;font-family:'Instrument Sans',sans-serif;font-size:0.85rem;color:var(--text);outline:none;transition:border-color 0.15s;"
+                    onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+                <svg style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;"
+                    width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+            </div>
+
+            <div class="widget">
+                <div class="widget-title">People to follow</div>
+                <div id="follow-list"></div>
+            </div>
+
+            <div class="widget">
+                <div class="widget-title">Topics</div>
+                <div style="display:flex;flex-wrap:wrap;margin:-0.2rem;" id="topics"></div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="modal-bg" id="compose-modal">
+        <div class="modal-box">
+            <div class="modal-head">
+                <div class="serif" style="font-size:1.1rem;">New Post</div>
+                <button class="close-btn" onclick="closeModal('compose-modal')">✕</button>
+            </div>
+            <div style="display:flex;gap:0.9rem;">
+                <div class="avatar" style="width:40px;height:40px;background:#1e2d14;color:var(--accent);">RA</div>
+                <div style="flex:1;">
+                    <textarea id="compose-input" rows="4" class="compose-textarea" placeholder="What's happening?"
+                        style="font-size:1rem;min-height:110px;"></textarea>
+                    <div id="compose-img-preview" style="display:none;margin-top:0.5rem;"></div>
+                    <div
+                        style="border-top:1px solid var(--border);padding-top:0.75rem;display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;">
+                        <button class="icon-btn" onclick="toggleImgOption()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                        </button>
+                        <button class="post-btn-sm" onclick="submitPost()"
+                            style="padding:0.5rem 1.4rem;font-size:0.875rem;">Post it</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="edit-modal">
+        <div class="modal-box">
+            <div class="modal-head">
+                <div class="serif" style="font-size:1.1rem;">Edit Profile</div>
+                <button class="close-btn" onclick="closeModal('edit-modal')">✕</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.9rem;">
+                <div>
+                    <label style="font-size:0.78rem;color:var(--text3);display:block;margin-bottom:0.35rem;">Display
+                        name</label>
+                    <input type="text" value="Roland Adams"
+                        style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;padding:0.6rem 0.85rem;font-family:'Instrument Sans',sans-serif;font-size:0.9rem;color:var(--text);outline:none;transition:border-color 0.15s;"
+                        onfocus="this.style.borderColor='var(--accent)'"
+                        onblur="this.style.borderColor='var(--border2)'">
+                </div>
+                <div>
+                    <label style="font-size:0.78rem;color:var(--text3);display:block;margin-bottom:0.35rem;">Bio</label>
+                    <textarea rows="3"
+                        style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;padding:0.6rem 0.85rem;font-family:'Instrument Sans',sans-serif;font-size:0.9rem;color:var(--text);outline:none;resize:none;transition:border-color 0.15s;"
+                        onfocus="this.style.borderColor='var(--accent)'"
+                        onblur="this.style.borderColor='var(--border2)'">Full-stack dev building stuff on the internet. Lagos, NG 🇳🇬</textarea>
+                </div>
+                <div>
+                    <label
+                        style="font-size:0.78rem;color:var(--text3);display:block;margin-bottom:0.35rem;">Website</label>
+                    <input type="text" value="rolandadams.dev"
+                        style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;padding:0.6rem 0.85rem;font-family:'Instrument Sans',sans-serif;font-size:0.9rem;color:var(--text);outline:none;transition:border-color 0.15s;"
+                        onfocus="this.style.borderColor='var(--accent)'"
+                        onblur="this.style.borderColor='var(--border2)'">
+                </div>
+                <div style="display:flex;justify-content:flex-end;margin-top:0.25rem;">
+                    <button onclick="closeModal('edit-modal')"
+                        style="background:var(--accent);color:var(--accent-text);border:none;border-radius:9px;padding:0.6rem 1.5rem;font-family:'Instrument Sans',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;">Save
+                        changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="notif-modal">
+        <div class="modal-box">
+            <div class="modal-head">
+                <div class="serif" style="font-size:1.1rem;">Notifications</div>
+                <button class="close-btn" onclick="closeModal('notif-modal')">✕</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.6rem;" id="notif-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const me = { id: 0, name: "Roland Adams", handle: "R_coredev", initials: "RA", bg: "#1e2d14", fg: "var(--accent)" };
+
+        const users = [
+            { id: 1, name: "Akintola Steve", handle: "AkintolaDev", initials: "AS", bg: "#1a1e2e", fg: "#7eb8f7" },
+            { id: 2, name: "Chiamaka Obi", handle: "chiamaka_obi", initials: "CO", bg: "#2a1a2e", fg: "#d07ef7" },
+            { id: 3, name: "Tunde Builds", handle: "TundeBuilds", initials: "TB", bg: "#1e2a1a", fg: "#7ef7a4" },
+            { id: 4, name: "Kemi Lagos", handle: "kemi_lagos", initials: "KL", bg: "#2e1e1a", fg: "#f79e7e" },
+            { id: 5, name: "Dev Diary", handle: "devdiary_ng", initials: "DD", bg: "#1a2a2a", fg: "#7ef0f7" },
+        ];
+
+        const imgColors = [
+            { bg: "linear-gradient(135deg,#1a2a1e 0%,#2d4a35 100%)", label: "🌿 nature shot" },
+            { bg: "linear-gradient(135deg,#1a1e2e 0%,#2d3560 100%)", label: "🌃 night vibes" },
+            { bg: "linear-gradient(135deg,#2e1e2a 0%,#4a2d40 100%)", label: "📸 street photo" },
+            { bg: "linear-gradient(135deg,#2a2010 0%,#4a3820 100%)", label: "☕ morning mood" },
+            { bg: "linear-gradient(135deg,#1a2020 0%,#253535 100%)", label: "💻 desk setup" },
+        ];
+
+        let myPosts = [
+            { id: 1, time: "1h", text: "Shipped a new feature today after 2 weeks of being scared to push it.\n\nIt's live. Nothing broke. The fear really is always worse than the deploy.", likes: 412, comments: 33, reposts: 89, liked: false, hasImg: false },
+            { id: 2, time: "6h", text: "Finally cleaned the cable situation on my desk 😅\n\nSmall win but the peace of mind is worth it.", likes: 198, comments: 19, reposts: 22, liked: false, hasImg: true, imgIdx: 4 },
+            { id: 3, time: "1d", text: "Hot take: The best code review comment is one that teaches, not one that nitpicks.\n\nBe the reviewer you wish you had junior year.", likes: 887, comments: 61, reposts: 203, liked: false, hasImg: false },
+            { id: 4, time: "2d", text: "Morning run before the Lagos traffic chaos 🏃‍♂️\n\nStarting the day this way genuinely changes everything.", likes: 344, comments: 12, reposts: 55, liked: false, hasImg: true, imgIdx: 0 },
+            { id: 5, time: "3d", text: "Been using Neovim for 3 months now.\n\nStill lost sometimes but the muscle memory is building. Can't go back to VSCode at this point.", likes: 1102, comments: 97, reposts: 312, liked: false, hasImg: false },
+            { id: 6, time: "4d", text: "Reminder that building in public is not about showing off. It's about accountability and learning in the open.\n\nSome of my best feedback came from strangers on the internet.", likes: 2340, comments: 180, reposts: 590, liked: false, hasImg: false },
+        ];
+
+        let myReplies = [
+            { id: 10, replyTo: "AkintolaDev", time: "3h", text: "100% agree. System thinking is a multiplier, not just a career skill.", likes: 44, comments: 2, reposts: 8, liked: false, hasImg: false },
+            { id: 11, replyTo: "TundeBuilds", time: "1d", text: "Revenue > growth is the lesson most founders learn too late 💯", likes: 91, comments: 5, reposts: 17, liked: false, hasImg: false },
+            { id: 12, replyTo: "devdiary_ng", time: "2d", text: "The deploy fear is real. Staging never feels the same as prod 😅", likes: 33, comments: 1, reposts: 4, liked: false, hasImg: false },
+        ];
+
+        let likedPosts = [
+            { id: 20, user: users[0], time: "2h", text: "System design is a skill that compounds. The more you practice thinking in systems, the easier it becomes.", likes: 346, comments: 15, reposts: 51, liked: true, hasImg: false },
+            { id: 21, user: users[1], time: "5h", text: "Finally finished the rebrand for a Lagos fintech 🎉\n\nFull branding kit, landing page + design system in 3 weeks.", likes: 812, comments: 47, reposts: 120, liked: true, hasImg: true, imgIdx: 2 },
+            { id: 22, user: users[3], time: "1d", text: "Morning from Lagos 🌅\n\nStarted journaling again after a 6 month break.", likes: 533, comments: 29, reposts: 76, liked: true, hasImg: true, imgIdx: 3 },
+        ];
+
+        let nextId = 30;
+        const following = new Set([1, 3]);
+        let pendingImg = false;
+        let currentTab = 'posts';
+
+        const topics = ["#LagosTech", "#BuildInPublic", "#SystemDesign", "#OpenSource", "#Startups", "#UIDesign", "#RemoteWork", "#JavaScript"];
+        const notifs = [
+            { icon: "❤️", html: "<strong>Akintola Dev</strong> liked your post", time: "3m" },
+            { icon: "🔁", html: "<strong>Kemi Lagos</strong> reposted your thread", time: "21m" },
+            { icon: "👤", html: "<strong>Dev Diary NG</strong> followed you", time: "1h" },
+            { icon: "💬", html: "<strong>Chiamaka Obi</strong> replied: \"this is facts 🔥\"", time: "2h" },
+        ];
+
+        function fmt(n) {
+            if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + "K";
+            return n;
+        }
+
+        function postCardHtml(p, user, i, isReply) {
+            const imgHtml = p.hasImg ? `<div class="post-img-placeholder" style="background:${imgColors[p.imgIdx].bg};"><span style="font-size:0.85rem;opacity:0.5;">${imgColors[p.imgIdx].label}</span></div>` : '';
+            const replyLabel = isReply ? `<div style="font-size:0.78rem;color:var(--text3);margin-bottom:0.45rem;">↩ Replying to <span style="color:var(--accent);">@${p.replyTo}</span></div>` : '';
+            return `<div class="post-card" style="animation-delay:${i * 0.04}s">
+    <div style="display:flex;gap:0.85rem;">
+      <div class="avatar" style="width:38px;height:38px;background:${user.bg};color:${user.fg};">${user.initials}</div>
+      <div style="flex:1;min-width:0;">
+        ${replyLabel}
+        <div class="post-meta">
+          <span class="post-name">${user.name}</span>
+          <span class="post-handle">@${user.handle}</span>
+          <span class="post-time">${p.time}</span>
+        </div>
+        <div class="post-text">${p.text}</div>
+        ${imgHtml}
+        <div class="actions">
+          <button class="act ${p.liked ? 'liked' : ''}" onclick="toggleLike(${p.id}, event)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="${p.liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            ${fmt(p.likes)}
+          </button>
+          <button class="act">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            ${fmt(p.comments)}
+          </button>
+          <button class="act" onclick="doRepost(${p.id}, event)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            ${fmt(p.reposts)}
+          </button>
+          <button class="act" onclick="event.stopPropagation()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+        }
+
+        function renderTab(tab) {
+            const container = document.getElementById('tab-content');
+            if (tab === 'posts') {
+                container.innerHTML = myPosts.map((p, i) => postCardHtml(p, me, i, false)).join('');
+            } else if (tab === 'replies') {
+                container.innerHTML = myReplies.map((p, i) => postCardHtml(p, me, i, true)).join('');
+            } else if (tab === 'media') {
+                const imgPosts = myPosts.filter(p => p.hasImg);
+                container.innerHTML = `<div class="media-grid">${imgPosts.map(p => `
+      <div class="media-cell" style="background:${imgColors[p.imgIdx].bg};">
+        <span style="font-size:1.4rem;">${imgColors[p.imgIdx].label.split(' ')[0]}</span>
+      </div>`).join('')}</div>
+      ${imgPosts.length === 0 ? `<div style="padding:2.5rem;text-align:center;color:var(--text3);font-size:0.875rem;">No media posts yet</div>` : ''}`;
+            } else if (tab === 'likes') {
+                container.innerHTML = likedPosts.map((p, i) => postCardHtml(p, p.user, i, false)).join('');
+            }
+        }
+
+        function switchTab(tab, btn) {
+            currentTab = tab;
+            document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderTab(tab);
+        }
+
+        function toggleLike(id, e) {
+            e.stopPropagation();
+            let p = myPosts.find(p => p.id === id) || myReplies.find(p => p.id === id) || likedPosts.find(p => p.id === id);
+            if (!p) return;
+            p.liked = !p.liked;
+            p.likes += p.liked ? 1 : -1;
+            renderTab(currentTab);
+        }
+
+        function doRepost(id, e) {
+            e.stopPropagation();
+            let p = myPosts.find(p => p.id === id) || myReplies.find(p => p.id === id) || likedPosts.find(p => p.id === id);
+            if (!p) return;
+            p.reposts += 1;
+            renderTab(currentTab);
+        }
+
+        function renderFollowList() {
+            const suggestions = users.filter(u => !following.has(u.id)).slice(0, 3);
+            document.getElementById('follow-list').innerHTML = suggestions.map(u => `
+    <div class="person-row">
+      <div class="avatar" style="width:34px;height:34px;background:${u.bg};color:${u.fg};">${u.initials}</div>
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.name}</div>
+        <div style="font-size:0.73rem;color:var(--text3);">@${u.handle}</div>
+      </div>
+      <button class="follow-btn ${following.has(u.id) ? 'on' : ''}" onclick="toggleFollow(${u.id}, this)">${following.has(u.id) ? 'Following' : 'Follow'}</button>
+    </div>`).join('');
+        }
+
+        function renderTopics() {
+            document.getElementById('topics').innerHTML = topics.map(t => `<span class="tag-pill">${t}</span>`).join('');
+        }
+
+        function renderNotifs() {
+            document.getElementById('notif-list').innerHTML = notifs.map(n => `
+    <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.65rem;border-radius:10px;background:var(--surface2);">
+      <span style="font-size:1.1rem;flex-shrink:0;">${n.icon}</span>
+      <div style="flex:1;">
+        <div style="font-size:0.875rem;line-height:1.4;">${n.html}</div>
+        <div style="font-size:0.75rem;color:var(--text3);margin-top:0.2rem;">${n.time} ago</div>
+      </div>
+    </div>`).join('');
+        }
+
+        function toggleFollow(id, btn) {
+            if (following.has(id)) { following.delete(id); btn.textContent = 'Follow'; btn.classList.remove('on'); }
+            else { following.add(id); btn.textContent = 'Following'; btn.classList.add('on'); }
+            renderFollowList();
+        }
+
+        function submitPost() {
+            const text = document.getElementById('compose-input').value.trim();
+            if (!text) return;
+            const newPost = { id: nextId++, time: "now", text, likes: 0, comments: 0, reposts: 0, liked: false, hasImg: pendingImg, imgIdx: pendingImg ? 0 : undefined };
+            myPosts.unshift(newPost);
+            document.getElementById('compose-input').value = '';
+            document.getElementById('compose-img-preview').style.display = 'none';
+            pendingImg = false;
+            closeModal('compose-modal');
+            document.getElementById('header-post-count').textContent = (myPosts.length + 300) + ' posts';
+            if (currentTab === 'posts') renderTab('posts');
+        }
+
+        function toggleImgOption() {
+            pendingImg = !pendingImg;
+            const preview = document.getElementById('compose-img-preview');
+            if (pendingImg) {
+                preview.style.display = 'block';
+                preview.innerHTML = `<div style="background:${imgColors[0].bg};border-radius:10px;height:80px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--text3);">Image attached ${imgColors[0].label}</div>`;
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        function openComposeModal() {
+            document.getElementById('compose-modal').classList.add('open');
+            setTimeout(() => document.getElementById('compose-input').focus(), 200);
+        }
+
+        function openEditModal() {
+            document.getElementById('edit-modal').classList.add('open');
+        }
+
+        function openNotifModal() {
+            renderNotifs();
+            document.getElementById('notif-modal').classList.add('open');
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+        function setActive(el) {
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        document.querySelectorAll('.modal-bg').forEach(bg => {
+            bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+        });
+
+        renderTab('posts');
+        renderFollowList();
+        renderTopics();
+    </script>
+</body>
+
+</html>
