@@ -13,11 +13,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+            $table->string('supabase_user_id')->unique();
+            $table->string('email')->nullable();
             $table->timestamps();
         });
 
@@ -34,6 +31,17 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
+        });
+
+        Schema::create('profiles', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('username')->unique();
+            $table->string('display_name')->nullable();
+            $table->text('bio')->nullable();
+            $table->string('avatar')->nullable();
+            $table->string('website')->nullable();
+            $table->timestamps();
         });
     }
 
