@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useProfileStore, useAuthStore } from "../store/store";
+import { useAuthStore, useProfileStore, usePostStore } from "../store/store";
 
 function fmt(n) {
   if (!n && n !== 0) return "0";
@@ -109,7 +109,7 @@ function EmptyState({ label }) {
 function CommentModal({ post, token, myInfo, onClose, onCommentPosted }) {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const { createComment } = useProfileStore();
+  const { createComment } = usePostStore();
 
   const submit = async () => {
     if (!text.trim() || submitting) return;
@@ -224,16 +224,19 @@ function CommentModal({ post, token, myInfo, onClose, onCommentPosted }) {
 function PostCard({
   post,
   isReply,
-  isMine,
   token,
   myInfo,
   myUsername,
   onDeleted,
   onEdited,
+  repostedByUsername,
 }) {
-  const [liked, setLiked] = useState(post._liked ?? false);
+  const navigate = useNavigate();
+  const [liked, setLiked] = useState(post.is_liked ?? post._liked ?? false);
   const [likeCount, setLikeCount] = useState(post?.counts?.likes ?? 0);
-  const [reposted, setReposted] = useState(post._reposted ?? false);
+  const [reposted, setReposted] = useState(
+    post.is_reposted ?? post._reposted ?? false,
+  );
   const [repostCount, setRepostCount] = useState(post?.counts?.reposts ?? 0);
   const [commentCount, setCommentCount] = useState(post?.counts?.comments ?? 0);
   const [showMenu, setShowMenu] = useState(false);
@@ -244,8 +247,14 @@ function PostCard({
   const [editSaving, setEditSaving] = useState(false);
   const menuRef = useRef(null);
 
-  const { likePost, unlikePost, repostPost, deletePost, editPost } =
-    useProfileStore();
+  const {
+    likePost,
+    unlikePost,
+    repostPost,
+    unrepostPost,
+    deletePost,
+    editPost,
+  } = usePostStore();
 
   const isMyPost = myUsername && post.user?.username === myUsername;
 
@@ -258,7 +267,8 @@ function PostCard({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const toggleLike = async () => {
+  const toggleLike = async (e) => {
+    e.stopPropagation();
     if (!token) return;
     const wasLiked = liked;
     setLiked(!wasLiked);
@@ -267,14 +277,18 @@ function PostCard({
     else await likePost(post.id, token);
   };
 
-  const toggleRepost = async () => {
+  const toggleRepost = async (e) => {
+    e.stopPropagation();
     if (!token) return;
-    setReposted(true);
-    setRepostCount((c) => c + 1);
-    await repostPost(post.id, token);
+    const wasReposted = reposted;
+    setReposted(!wasReposted);
+    setRepostCount((c) => (wasReposted ? Math.max(0, c - 1) : c + 1));
+    if (wasReposted) await unrepostPost(post.id, token);
+    else await repostPost(post.id, token);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e) => {
+    e.stopPropagation();
     if (!window.confirm("Delete this post?")) return;
     setDeleting(true);
     await deletePost(post.id, token);
@@ -290,16 +304,70 @@ function PostCard({
     setEditOpen(false);
   };
 
+  const handleCardClick = () => {
+    navigate(`/post/${post.id}`);
+  };
+
   const user = post.user;
+
+  // Determine if this card is being shown as a repost.
+  // Backend sets is_repost: true when it's fetched as part of a repost feed.
+  const showRepostBanner = post.is_repost === true && repostedByUsername;
 
   return (
     <>
       <div
         className="post-card"
-        style={{ opacity: deleting ? 0.4 : 1, transition: "opacity 0.2s" }}
+        style={{
+          opacity: deleting ? 0.4 : 1,
+          transition: "opacity 0.2s",
+          cursor: "pointer",
+        }}
+        onClick={handleCardClick}
       >
+        {/* ── Repost banner ── */}
+        {showRepostBanner && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              fontSize: "0.75rem",
+              color: "var(--text3)",
+              marginBottom: "0.5rem",
+              paddingLeft: "0.25rem",
+            }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <polyline points="17 1 21 5 17 9" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <polyline points="7 23 3 19 7 15" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+            <span>
+              {repostedByUsername === myUsername
+                ? "You reposted"
+                : `@${repostedByUsername} reposted`}
+            </span>
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: "0.85rem" }}>
-          <Avatar src={user?.avatar} name={user?.display_name} size={38} />
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/${user?.username}`);
+            }}
+          >
+            <Avatar src={user?.avatar} name={user?.display_name} size={38} />
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
@@ -321,7 +389,11 @@ function PostCard({
                 </span>
               </div>
               {isMyPost && (
-                <div style={{ position: "relative" }} ref={menuRef}>
+                <div
+                  style={{ position: "relative" }}
+                  ref={menuRef}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     onClick={() => setShowMenu((v) => !v)}
                     style={{
@@ -360,7 +432,8 @@ function PostCard({
                       }}
                     >
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setEditOpen(true);
                           setShowMenu(false);
                         }}
@@ -457,35 +530,37 @@ function PostCard({
                 }}
               >
                 {post.media.map((m) =>
-                  m.type === "video" ? (
+                  m.type == "video" ? (
                     <video
                       key={m.id}
-                      src={m.url}
+                      src={m.path}
                       controls
                       style={{
                         width: "100%",
                         borderRadius: "10px",
                         maxHeight: 280,
                       }}
+                      onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
                     <img
                       key={m.id}
-                      src={m.url}
-                      alt=""
+                      src={m.path}
+                      alt="hi"
                       style={{
                         width: "100%",
                         objectFit: "cover",
                         maxHeight: 280,
                         borderRadius: post.media.length === 1 ? "12px" : "6px",
                       }}
+                      onClick={(e) => e.stopPropagation()}
                     />
                   ),
                 )}
               </div>
             )}
 
-            <div className="actions">
+            <div className="actions" onClick={(e) => e.stopPropagation()}>
               <button
                 className={`act${liked ? " liked" : ""}`}
                 onClick={toggleLike}
@@ -504,7 +579,10 @@ function PostCard({
               </button>
               <button
                 className="act"
-                onClick={() => token && setCommentOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  token && setCommentOpen(true);
+                }}
               >
                 <svg
                   width="15"
@@ -521,7 +599,6 @@ function PostCard({
               <button
                 className={`act${reposted ? " liked" : ""}`}
                 onClick={toggleRepost}
-                disabled={reposted}
               >
                 <svg
                   width="15"
@@ -641,15 +718,59 @@ function PostCard({
 function ComposePost({ myInfo, token, username, onPosted }) {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const { createPost } = useProfileStore();
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [mediaPreviews, setMediaPreviews] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+  const { createPost, uploadMedia } = usePostStore();
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const limited = files.slice(0, 4 - mediaFiles.length);
+    setMediaFiles((prev) => [...prev, ...limited]);
+    limited.forEach((f) => {
+      const reader = new FileReader();
+      reader.onload = (ev) =>
+        setMediaPreviews((prev) => [
+          ...prev,
+          {
+            url: ev.target.result,
+            type: f.type.startsWith("video") ? "video" : "image",
+          },
+        ]);
+      reader.readAsDataURL(f);
+    });
+    e.target.value = "";
+  };
+
+  const removeMedia = (i) => {
+    setMediaFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setMediaPreviews((prev) => prev.filter((_, idx) => idx !== i));
+  };
 
   const submit = async () => {
     if (!text.trim() || submitting) return;
     setSubmitting(true);
-    await createPost(text, token, username);
-    setText("");
+    let mediaUrls = [];
+    if (mediaFiles.length) {
+      setUploading(true);
+      const results = await Promise.all(
+        mediaFiles.map((f) => uploadMedia(f, token)),
+      );
+      setUploading(false);
+      mediaUrls = results
+        .filter((r) => r && !r.error)
+        .map((r) => ({ url: r.url, type: r.type }));
+    }
+    const result = await createPost(text, token, username, mediaUrls);
+    if (!result?.error) {
+      setText("");
+      setMediaFiles([]);
+      setMediaPreviews([]);
+      onPosted && onPosted();
+    }
     setSubmitting(false);
-    onPosted && onPosted();
   };
 
   return (
@@ -668,6 +789,67 @@ function ComposePost({ myInfo, token, username, onPosted }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
+          {mediaPreviews.length > 0 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  mediaPreviews.length === 1 ? "1fr" : "1fr 1fr",
+                gap: "0.4rem",
+                marginTop: "0.5rem",
+                borderRadius: "10px",
+                overflow: "hidden",
+              }}
+            >
+              {mediaPreviews.map((m, i) => (
+                <div key={i} style={{ position: "relative" }}>
+                  {m.type === "video" ? (
+                    <video
+                      src={m.url}
+                      style={{
+                        width: "100%",
+                        maxHeight: 200,
+                        objectFit: "cover",
+                        borderRadius: 8,
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src={m.url}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        maxHeight: 200,
+                        objectFit: "cover",
+                        borderRadius: 8,
+                      }}
+                    />
+                  )}
+                  <button
+                    onClick={() => removeMedia(i)}
+                    style={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      background: "rgba(0,0,0,0.6)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: 22,
+                      height: 22,
+                      color: "#fff",
+                      cursor: "pointer",
+                      fontSize: "0.75rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div
             style={{
               display: "flex",
@@ -676,7 +858,11 @@ function ComposePost({ myInfo, token, username, onPosted }) {
               marginTop: "0.6rem",
             }}
           >
-            <button className="icon-btn">
+            <button
+              className="icon-btn"
+              onClick={() => fileRef.current?.click()}
+              disabled={mediaFiles.length >= 4}
+            >
               <svg
                 width="17"
                 height="17"
@@ -690,6 +876,14 @@ function ComposePost({ myInfo, token, username, onPosted }) {
                 <polyline points="21 15 16 10 5 21" />
               </svg>
             </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              style={{ display: "none" }}
+              onChange={handleFileSelect}
+            />
             <button
               className="post-btn-sm"
               onClick={submit}
@@ -700,7 +894,7 @@ function ComposePost({ myInfo, token, username, onPosted }) {
                 opacity: !text.trim() || submitting ? 0.5 : 1,
               }}
             >
-              {submitting ? "Posting…" : "Post it"}
+              {uploading ? "Uploading…" : submitting ? "Posting…" : "Post it"}
             </button>
           </div>
         </div>
@@ -786,7 +980,6 @@ const Profile = () => {
 
   const {
     profiles,
-    activeUsername,
     isLoadingProfile,
     isLoadingPosts,
     isLoadingReplies,
@@ -802,12 +995,14 @@ const Profile = () => {
     unfollowUser,
     clearProfile,
     updateProfile,
+    uploadAvatar,
     isFollowing,
     isFollowLoading,
   } = useProfileStore();
 
-  const { profiles: myProfiles } = useProfileStore();
-  const { token: authToken } = useAuthStore();
+  const { me } = useAuthStore();
+  const myUsername = me?.username ?? null;
+  const myInfo = me ?? null;
 
   const [activeTab, setActiveTab] = useState("posts");
   const [editOpen, setEditOpen] = useState(false);
@@ -818,18 +1013,15 @@ const Profile = () => {
     website: "",
     avatar: "",
   });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [localPosts, setLocalPosts] = useState(null);
+  const avatarInputRef = useRef(null);
 
   const profileData = profiles[username] ?? null;
   const info = profileData?.info ?? null;
   const isMine = profileData?.mine ?? false;
-
-  const myProfileData =
-    activeUsername && profiles[activeUsername]
-      ? profiles[activeUsername]
-      : null;
-  const myInfo = myProfileData?.info ?? null;
-  const myUsername = myInfo?.username ?? null;
 
   useEffect(() => {
     if (username) fetchProfile(username, token);
@@ -857,10 +1049,19 @@ const Profile = () => {
       fetchLikedPosts(username, token);
     if (activeTab === "reposts" && !profileData.reposts)
       fetchReposts(username, token);
+    if (activeTab === "followers") navigate(`/follows?t=followers`);
+    if (activeTab === "following") navigate(`/follows?t=following`);
   }, [activeTab, profileData]);
 
   useEffect(() => {
-    if (profileData?.posts?.data) setLocalPosts(profileData.posts.data);
+    if (profileData?.posts?.data) {
+      const data = profileData.posts.data;
+      const repostedIds = new Set(
+        data.filter((p) => p.is_repost).map((p) => p.id),
+      );
+      // Store originals, but exclude any that also appear as a repost (avoid duplicates)
+      setLocalPosts(data.filter((p) => !p.is_repost && !repostedIds.has(p.id)));
+    }
   }, [profileData?.posts]);
 
   const handleFollow = () => {
@@ -872,10 +1073,29 @@ const Profile = () => {
     else followUser(username, token);
   };
 
+  const handleAvatarSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(ev.target.result);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   const handleEditSave = async () => {
     setEditSaving(true);
-    await updateProfile(username, editForm, token);
+    let finalForm = { ...editForm };
+    if (avatarFile) {
+      setAvatarUploading(true);
+      const result = await uploadAvatar(avatarFile, token);
+      setAvatarUploading(false);
+      if (result && !result.error) finalForm.avatar = result.url;
+    }
+    await updateProfile(username, finalForm, token);
     setEditSaving(false);
+    setAvatarFile(null);
+    setAvatarPreview(null);
     setEditOpen(false);
   };
 
@@ -892,10 +1112,24 @@ const Profile = () => {
   };
 
   const handleNewPost = () => {
-    fetchPosts(username, token);
+    fetchPosts(username, token, 1, true);
   };
 
-  const posts = localPosts ?? profileData?.posts?.data ?? [];
+  // Merge local originals with reposts from store, sorted newest first.
+  // A post that was reposted appears in the API twice (is_repost:true and
+  // is_repost:false). We keep only the repost copy (shows the banner) and drop
+  // the plain copy so it doesn't show twice. The repost copy's created_at already
+  // reflects reposted_at from the backend, so a simple date sort is correct.
+  const storeReposts = (profileData?.posts?.data ?? []).filter(
+    (p) => p.is_repost,
+  );
+  const repostedIds = new Set(storeReposts.map((p) => p.id));
+  const rawOriginals =
+    localPosts ?? (profileData?.posts?.data ?? []).filter((p) => !p.is_repost);
+  const originals = rawOriginals.filter((p) => !repostedIds.has(p.id));
+  const posts = [...originals, ...storeReposts].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at),
+  );
   const replies = profileData?.replies?.data ?? [];
   const likedPosts = profileData?.likedPosts?.data ?? [];
   const reposts = profileData?.reposts?.data ?? [];
@@ -915,7 +1149,8 @@ const Profile = () => {
       if (!posts.length) return <EmptyState label="posts" />;
       return posts.map((p) => (
         <PostCard
-          key={p.id}
+          // use `post-{id}` for originals, `repost-{id}` for reposts to avoid duplicate keys
+          key={p.is_repost ? `repost-${p.id}` : `post-${p.id}`}
           post={p}
           isReply={false}
           token={token}
@@ -923,6 +1158,7 @@ const Profile = () => {
           myUsername={myUsername}
           onDeleted={handlePostDeleted}
           onEdited={handlePostEdited}
+          repostedByUsername={p.is_repost ? username : null}
         />
       ));
     }
@@ -952,9 +1188,13 @@ const Profile = () => {
           {mediaPosts.map((p) =>
             p.media.map((m) =>
               m.type === "video" ? (
-                <div key={m.id} className="media-cell">
+                <div
+                  key={m.id}
+                  className="media-cell"
+                  onClick={() => navigate(`/post/${p.id}`)}
+                >
                   <video
-                    src={m.url}
+                    src={m.path}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -967,10 +1207,12 @@ const Profile = () => {
                   key={m.id}
                   className="media-cell"
                   style={{
-                    backgroundImage: `url(${m.url})`,
+                    backgroundImage: `url(${m.path})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
+                    cursor: "pointer",
                   }}
+                  onClick={() => navigate(`/post/${p.id}`)}
                 />
               ),
             ),
@@ -1001,14 +1243,15 @@ const Profile = () => {
       if (!reposts.length) return <EmptyState label="reposts" />;
       return reposts.map((p) => (
         <PostCard
-          key={p.id}
-          post={p}
+          key={`repost-${p.id}`}
+          post={{ ...p, is_repost: true }}
           isReply={false}
           token={token}
           myInfo={myInfo}
           myUsername={myUsername}
           onDeleted={handlePostDeleted}
           onEdited={handlePostEdited}
+          repostedByUsername={username}
         />
       ));
     }
@@ -1229,13 +1472,21 @@ const Profile = () => {
         </div>
 
         <div className="stat-row">
-          <div className="stat-item">
+          <div
+            className="stat-item"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate(`/follows?t=following`)}
+          >
             <span className="stat-num">
               {fmt(profileData?.following_count ?? 0)}
             </span>
             <span className="stat-label">Following</span>
           </div>
-          <div className="stat-item">
+          <div
+            className="stat-item"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate(`/follows?t=followers`)}
+          >
             <span className="stat-num">
               {fmt(profileData?.followers_count ?? 0)}
             </span>
@@ -1291,9 +1542,91 @@ const Profile = () => {
                 gap: "0.9rem",
               }}
             >
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+              >
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      background: "var(--surface2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1.3rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : editForm.avatar ? (
+                      <img
+                        src={editForm.avatar}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      getInitials(editForm.display_name)
+                    )}
+                  </div>
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      right: 0,
+                      width: 22,
+                      height: 22,
+                      background: "var(--accent)",
+                      border: "2px solid var(--surface)",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleAvatarSelect}
+                  />
+                </div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text3)" }}>
+                  Click the + to upload a new photo from your device
+                </div>
+              </div>
+
               {[
                 { label: "Display name", key: "display_name", type: "text" },
-                { label: "Avatar URL", key: "avatar", type: "text" },
                 { label: "Website", key: "website", type: "text" },
               ].map(({ label, key, type }) => (
                 <div key={key}>
@@ -1369,7 +1702,11 @@ const Profile = () => {
                 }}
               >
                 <button
-                  onClick={() => setEditOpen(false)}
+                  onClick={() => {
+                    setEditOpen(false);
+                    setAvatarFile(null);
+                    setAvatarPreview(null);
+                  }}
                   style={{
                     background: "transparent",
                     border: "1.5px solid var(--border2)",
@@ -1385,7 +1722,7 @@ const Profile = () => {
                 </button>
                 <button
                   onClick={handleEditSave}
-                  disabled={editSaving}
+                  disabled={editSaving || avatarUploading}
                   style={{
                     background: "var(--accent)",
                     color: "var(--accent-text)",
@@ -1396,10 +1733,14 @@ const Profile = () => {
                     fontSize: "0.875rem",
                     fontWeight: 700,
                     cursor: "pointer",
-                    opacity: editSaving ? 0.6 : 1,
+                    opacity: editSaving || avatarUploading ? 0.6 : 1,
                   }}
                 >
-                  {editSaving ? "Saving…" : "Save changes"}
+                  {avatarUploading
+                    ? "Uploading…"
+                    : editSaving
+                      ? "Saving…"
+                      : "Save changes"}
                 </button>
               </div>
             </div>

@@ -6,6 +6,8 @@ import Profile from "./pages/Profile";
 import Layout from "./components/layouts/Layout";
 import { useEffect } from "react";
 import { useAuthStore } from "./store/store";
+import Follows from "./pages/Follows";
+import PostDetails from "./pages/PostDetails";
 function App() {
   const { initializeAuth } = useAuthStore();
   useEffect(() => {
@@ -15,12 +17,14 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/auth" element={<Auth />} />
+
         <Route element={<Layout />}>
           <Route path="/" element={<Homepage />} />
+          <Route path="/follows" element={<Follows />} />
+          <Route path="/post/:id" element={<PostDetails />} />
           <Route path="/:username" element={<Profile />} />
         </Route>
-
-        <Route path="/auth" element={<Auth />} />
       </Routes>
     </Router>
   );

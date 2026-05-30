@@ -1,674 +1,840 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flock</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<style>
-@import "https://cdn.jsdelivr.net/npm/tailwindcss@4/cdn.min.css";
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
+  <style>
+    @import "https://cdn.jsdelivr.net/npm/tailwindcss@4/cdn.min.css";
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-:root {
-  --bg: #0c0c0e;
-  --surface: #141416;
-  --surface2: #1c1c1f;
-  --border: #252528;
-  --border2: #2e2e32;
-  --text: #f0ede8;
-  --text2: #9995a0;
-  --text3: #5c5966;
-  --accent: #c8f058;
-  --accent-dim: #c8f05820;
-  --accent-text: #0c0c0e;
-  --red: #ff5e5e;
-  --red-dim: #ff5e5e18;
-}
+    :root {
+      --bg: #0c0c0e;
+      --surface: #141416;
+      --surface2: #1c1c1f;
+      --border: #252528;
+      --border2: #2e2e32;
+      --text: #f0ede8;
+      --text2: #9995a0;
+      --text3: #5c5966;
+      --accent: #c8f058;
+      --accent-dim: #c8f05820;
+      --accent-text: #0c0c0e;
+      --red: #ff5e5e;
+      --red-dim: #ff5e5e18;
+    }
 
-html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+    }
 
-body {
-  font-family: 'Instrument Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-}
+    body {
+      font-family: 'Instrument Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-.serif { font-family: 'Instrument Serif', serif; }
+    .serif {
+      font-family: 'Instrument Serif', serif;
+    }
 
-::-webkit-scrollbar { width: 0px; }
+    ::-webkit-scrollbar {
+      width: 0px;
+    }
 
-.layout {
-  max-width: 1060px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 220px 1fr 230px;
-  min-height: 100vh;
-}
+    .layout {
+      max-width: 1060px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 220px 1fr 230px;
+      min-height: 100vh;
+    }
 
-.sidebar-left {
-  border-right: 1px solid var(--border);
-  padding: 1.75rem 1rem 1.5rem;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  overflow-y: auto;
-}
+    .sidebar-left {
+      border-right: 1px solid var(--border);
+      padding: 1.75rem 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      overflow-y: auto;
+    }
 
-.brand {
-  font-family: 'Instrument Serif', serif;
-  font-size: 1.8rem;
-  color: var(--accent);
-  letter-spacing: -0.02em;
-  padding: 0 0.5rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
+    .brand {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.8rem;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      padding: 0 0.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
 
-.brand-dot {
-  width: 9px; height: 9px;
-  background: var(--accent);
-  border-radius: 50%;
-  margin-top: 2px;
-}
+    .brand-dot {
+      width: 9px;
+      height: 9px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin-top: 2px;
+    }
 
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text2);
-  cursor: pointer;
-  transition: all 0.15s;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  position: relative;
-}
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      position: relative;
+    }
 
-.nav-item:hover { color: var(--text); background: var(--surface2); }
-.nav-item.active { color: var(--text); background: var(--surface2); font-weight: 600; }
+    .nav-item:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
 
-.nav-item .badge {
-  margin-left: auto;
-  background: var(--accent);
-  color: var(--accent-text);
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 0.15rem 0.45rem;
-  border-radius: 9999px;
-}
+    .nav-item.active {
+      color: var(--text);
+      background: var(--surface2);
+      font-weight: 600;
+    }
 
-.cta-btn {
-  background: var(--accent);
-  color: var(--accent-text);
-  border: none;
-  border-radius: 12px;
-  padding: 0.8rem;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  width: 100%;
-  margin-top: auto;
-  transition: all 0.15s;
-  letter-spacing: 0.01em;
-}
-.cta-btn:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-dim); }
+    .nav-item .badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: var(--accent-text);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+    }
 
-.me-row {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.65rem 0.5rem;
-  border-radius: 10px;
-  cursor: pointer;
-  margin-top: 0.75rem;
-  transition: background 0.15s;
-}
-.me-row:hover { background: var(--surface2); }
+    .cta-btn {
+      background: var(--accent);
+      color: var(--accent-text);
+      border: none;
+      border-radius: 12px;
+      padding: 0.8rem;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-top: auto;
+      transition: all 0.15s;
+      letter-spacing: 0.01em;
+    }
 
-.avatar {
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  flex-shrink: 0;
-  font-size: 0.8rem;
-}
+    .cta-btn:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--accent-dim);
+    }
 
-.feed-col {
-  border-right: 1px solid var(--border);
-}
+    .me-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.65rem 0.5rem;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 0.75rem;
+      transition: background 0.15s;
+    }
 
-.feed-header {
-  position: sticky;
-  top: 0;
-  background: rgba(12,12,14,0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  padding: 1rem 1.25rem;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+    .me-row:hover {
+      background: var(--surface2);
+    }
 
-.compose-box {
-  padding: 1.1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: 0.85rem;
-  background: var(--surface);
-}
+    .avatar {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+      font-size: 0.8rem;
+    }
 
-.compose-inner {
-  flex: 1;
-}
+    .feed-col {
+      border-right: 1px solid var(--border);
+    }
 
-.compose-textarea {
-  width: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.95rem;
-  color: var(--text);
-  resize: none;
-  line-height: 1.5;
-}
-.compose-textarea::placeholder { color: var(--text3); }
+    .feed-header {
+      position: sticky;
+      top: 0;
+      background: rgba(12, 12, 14, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-.compose-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
+    .compose-box {
+      padding: 1.1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 0.85rem;
+      background: var(--surface);
+    }
 
-.icon-btn {
-  background: none;
-  border: none;
-  color: var(--text3);
-  cursor: pointer;
-  padding: 0.35rem;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  transition: color 0.15s, background 0.15s;
-}
-.icon-btn:hover { color: var(--accent); background: var(--accent-dim); }
+    .compose-inner {
+      flex: 1;
+    }
 
-.post-btn-sm {
-  background: var(--accent);
-  color: var(--accent-text);
-  border: none;
-  border-radius: 8px;
-  padding: 0.45rem 1.1rem;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.post-btn-sm:hover { opacity: 0.85; }
+    .compose-textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      resize: none;
+      line-height: 1.5;
+    }
 
-.post-card {
-  padding: 1.1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.12s;
-  cursor: pointer;
-  animation: fadeUp 0.3s ease both;
-}
-.post-card:hover { background: var(--surface); }
+    .compose-textarea::placeholder {
+      color: var(--text3);
+    }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+    .compose-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
 
-.post-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
-}
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 0.35rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s, background 0.15s;
+    }
 
-.post-name { font-weight: 600; font-size: 0.9rem; }
-.post-handle { color: var(--text3); font-size: 0.82rem; }
-.post-time { color: var(--text3); font-size: 0.82rem; }
-.post-time::before { content: '·'; margin-right: 0.4rem; }
+    .icon-btn:hover {
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
 
-.post-text {
-  font-size: 0.93rem;
-  line-height: 1.6;
-  color: var(--text);
-  white-space: pre-line;
-  margin-bottom: 0.75rem;
-}
+    .post-btn-sm {
+      background: var(--accent);
+      color: var(--accent-text);
+      border: none;
+      border-radius: 8px;
+      padding: 0.45rem 1.1rem;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
 
-.post-img {
-  width: 100%;
-  border-radius: 12px;
-  margin-bottom: 0.85rem;
-  display: block;
-  max-height: 320px;
-  object-fit: cover;
-  background: var(--surface2);
-}
+    .post-btn-sm:hover {
+      opacity: 0.85;
+    }
 
-.post-img-placeholder {
-  width: 100%;
-  border-radius: 12px;
-  margin-bottom: 0.85rem;
-  height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  color: var(--text3);
-  overflow: hidden;
-  position: relative;
-}
+    .post-card {
+      padding: 1.1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.12s;
+      cursor: pointer;
+      animation: fadeUp 0.3s ease both;
+    }
 
-.actions {
-  display: flex;
-  gap: 0.1rem;
-}
+    .post-card:hover {
+      background: var(--surface);
+    }
 
-.act {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.6rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  color: var(--text3);
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: 'Instrument Sans', sans-serif;
-  transition: all 0.15s;
-}
-.act:hover { color: var(--accent); background: var(--accent-dim); }
-.act.liked { color: var(--red); }
-.act.liked:hover { background: var(--red-dim); }
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
 
-.sidebar-right {
-  padding: 1.5rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-}
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-.widget {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem;
-}
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
+    }
 
-.widget-title {
-  font-family: 'Instrument Serif', serif;
-  font-size: 1rem;
-  margin-bottom: 0.85rem;
-  color: var(--text);
-}
+    .post-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
 
-.person-row {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.5rem 0;
-}
+    .post-handle {
+      color: var(--text3);
+      font-size: 0.82rem;
+    }
 
-.person-row + .person-row {
-  border-top: 1px solid var(--border);
-}
+    .post-time {
+      color: var(--text3);
+      font-size: 0.82rem;
+    }
 
-.follow-btn {
-  margin-left: auto;
-  background: transparent;
-  border: 1px solid var(--border2);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 0.3rem 0.8rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Instrument Sans', sans-serif;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.follow-btn:hover { border-color: var(--accent); color: var(--accent); }
-.follow-btn.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .post-time::before {
+      content: '·';
+      margin-right: 0.4rem;
+    }
 
-.tag-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.7rem;
-  background: var(--surface2);
-  border-radius: 8px;
-  font-size: 0.78rem;
-  color: var(--text2);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  margin: 0.2rem;
-}
-.tag-pill:hover { background: var(--accent-dim); color: var(--accent); }
+    .post-text {
+      font-size: 0.93rem;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-line;
+      margin-bottom: 0.75rem;
+    }
 
-.modal-bg {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.65);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-  backdrop-filter: blur(2px);
-}
-.modal-bg.open { opacity: 1; pointer-events: all; }
+    .post-img {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 0.85rem;
+      display: block;
+      max-height: 320px;
+      object-fit: cover;
+      background: var(--surface2);
+    }
 
-.modal-box {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: 18px;
-  padding: 1.5rem;
-  width: min(500px, 94vw);
-  transform: scale(0.96);
-  transition: transform 0.2s;
-}
-.modal-bg.open .modal-box { transform: scale(1); }
+    .post-img-placeholder {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 0.85rem;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: var(--text3);
+      overflow: hidden;
+      position: relative;
+    }
 
-.modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.1rem;
-}
+    .actions {
+      display: flex;
+      gap: 0.1rem;
+    }
 
-.close-btn {
-  background: var(--surface2);
-  border: none;
-  color: var(--text2);
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 0.9rem;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s;
-}
-.close-btn:hover { background: var(--border2); color: var(--text); }
+    .act {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--text3);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: 'Instrument Sans', sans-serif;
+      transition: all 0.15s;
+    }
 
-.profile-cover {
-  height: 80px;
-  background: linear-gradient(120deg, #1a1f14 0%, #2a3520 50%, #c8f05830 100%);
-  border-radius: 14px 14px 0 0;
-  position: relative;
-}
+    .act:hover {
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
 
-.profile-modal-box {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: 18px;
-  width: min(420px, 94vw);
-  overflow: hidden;
-  transform: scale(0.96);
-  transition: transform 0.2s;
-}
-.modal-bg.open .profile-modal-box { transform: scale(1); }
+    .act.liked {
+      color: var(--red);
+    }
 
-.stat-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+    .act.liked:hover {
+      background: var(--red-dim);
+    }
 
-.divider { height: 1px; background: var(--border); margin: 0.5rem 0; }
+    .sidebar-right {
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
 
-@media (max-width: 820px) {
-  .layout { grid-template-columns: 1fr; }
-  .sidebar-left, .sidebar-right { display: none; }
-}
-</style>
+    .widget {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem;
+    }
+
+    .widget-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1rem;
+      margin-bottom: 0.85rem;
+      color: var(--text);
+    }
+
+    .person-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.5rem 0;
+    }
+
+    .person-row+.person-row {
+      border-top: 1px solid var(--border);
+    }
+
+    .follow-btn {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Instrument Sans', sans-serif;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .follow-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .follow-btn.on {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-text);
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.7rem;
+      background: var(--surface2);
+      border-radius: 8px;
+      font-size: 0.78rem;
+      color: var(--text2);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin: 0.2rem;
+    }
+
+    .tag-pill:hover {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-bg.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 18px;
+      padding: 1.5rem;
+      width: min(500px, 94vw);
+      transform: scale(0.96);
+      transition: transform 0.2s;
+    }
+
+    .modal-bg.open .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.1rem;
+    }
+
+    .close-btn {
+      background: var(--surface2);
+      border: none;
+      color: var(--text2);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .close-btn:hover {
+      background: var(--border2);
+      color: var(--text);
+    }
+
+    .profile-cover {
+      height: 80px;
+      background: linear-gradient(120deg, #1a1f14 0%, #2a3520 50%, #c8f05830 100%);
+      border-radius: 14px 14px 0 0;
+      position: relative;
+    }
+
+    .profile-modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 18px;
+      width: min(420px, 94vw);
+      overflow: hidden;
+      transform: scale(0.96);
+      transition: transform 0.2s;
+    }
+
+    .modal-bg.open .profile-modal-box {
+      transform: scale(1);
+    }
+
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.5rem 0;
+    }
+
+    @media (max-width: 820px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar-left,
+      .sidebar-right {
+        display: none;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="layout">
+  <div class="layout">
 
-  <aside class="sidebar-left">
-    <div class="brand">
-      flock <div class="brand-dot"></div>
-    </div>
-
-    <button class="nav-item active" onclick="setActive(this)">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      Feed
-    </button>
-
-    <button class="nav-item" onclick="openNotifModal(); setActive(this)">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      Notifications
-      <span class="badge">4</span>
-    </button>
-
-    <button class="nav-item" onclick="setActive(this)">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Following
-    </button>
-
-    <button class="nav-item" onclick="openProfileModal(); setActive(this)">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Profile
-    </button>
-
-    <button class="nav-item" onclick="setActive(this)">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      Saved
-    </button>
-
-    <button class="cta-btn" onclick="openComposeModal()">+ New Post</button>
-
-    <div class="me-row" onclick="openProfileModal()">
-      <div class="avatar" style="width:36px;height:36px;background:#1e2d14;color:var(--accent);">RA</div>
-      <div style="min-width:0;">
-        <div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Roland Adams</div>
-        <div style="font-size:0.73rem;color:var(--text3);">@R_coredev</div>
+    <aside class="sidebar-left">
+      <div class="brand">
+        flock <div class="brand-dot"></div>
       </div>
-    </div>
-  </aside>
 
-  <main class="feed-col">
-    <div class="feed-header">
-      <div class="serif" style="font-size:1.15rem;letter-spacing:-0.01em;">Your Feed</div>
-      <div style="display:flex;gap:0.5rem;">
-        <button style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0.4rem 0.9rem;font-size:0.8rem;font-family:'Instrument Sans',sans-serif;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">Latest</button>
-        <button style="background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:0.4rem 0.9rem;font-size:0.8rem;font-family:'Instrument Sans',sans-serif;cursor:pointer;">Top</button>
+      <button class="nav-item active" onclick="setActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        Feed
+      </button>
+
+      <button class="nav-item" onclick="openNotifModal(); setActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        Notifications
+        <span class="badge">4</span>
+      </button>
+
+      <button class="nav-item" onclick="setActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        Following
+      </button>
+
+      <button class="nav-item" onclick="openProfileModal(); setActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+        Profile
+      </button>
+
+      <button class="nav-item" onclick="setActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+        </svg>
+        Saved
+      </button>
+
+      <button class="cta-btn" onclick="openComposeModal()">+ New Post</button>
+
+      <div class="me-row" onclick="openProfileModal()">
+        <div class="avatar" style="width:36px;height:36px;background:#1e2d14;color:var(--accent);">RA</div>
+        <div style="min-width:0;">
+          <div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            Roland Adams</div>
+          <div style="font-size:0.73rem;color:var(--text3);">@R_coredev</div>
+        </div>
       </div>
-    </div>
+    </aside>
 
-    <div class="compose-box">
-      <div class="avatar" style="width:38px;height:38px;background:#1e2d14;color:var(--accent);">RA</div>
-      <div class="compose-inner">
-        <textarea class="compose-textarea" rows="2" placeholder="What's on your mind, Roland?" id="quick-input"></textarea>
-        <div class="compose-footer">
-          <div style="display:flex;gap:0.25rem;">
-            <button class="icon-btn" title="Add image" onclick="simulateImage()">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            </button>
-            <button class="icon-btn" title="Tag someone">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            </button>
+    <main class="feed-col">
+      <div class="feed-header">
+        <div class="serif" style="font-size:1.15rem;letter-spacing:-0.01em;">Your Feed</div>
+        <div style="display:flex;gap:0.5rem;">
+          <button
+            style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0.4rem 0.9rem;font-size:0.8rem;font-family:'Instrument Sans',sans-serif;cursor:pointer;transition:all 0.15s;"
+            onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+            onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">Latest</button>
+          <button
+            style="background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:0.4rem 0.9rem;font-size:0.8rem;font-family:'Instrument Sans',sans-serif;cursor:pointer;">Top</button>
+        </div>
+      </div>
+
+      <div class="compose-box">
+        <div class="avatar" style="width:38px;height:38px;background:#1e2d14;color:var(--accent);">RA</div>
+        <div class="compose-inner">
+          <textarea class="compose-textarea" rows="2" placeholder="What's on your mind, Roland?"
+            id="quick-input"></textarea>
+          <div class="compose-footer">
+            <div style="display:flex;gap:0.25rem;">
+              <button class="icon-btn" title="Add image" onclick="simulateImage()">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </button>
+              <button class="icon-btn" title="Tag someone">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                  <line x1="7" y1="7" x2="7.01" y2="7" />
+                </svg>
+              </button>
+            </div>
+            <button class="post-btn-sm" onclick="quickPost()">Post it</button>
           </div>
-          <button class="post-btn-sm" onclick="quickPost()">Post it</button>
         </div>
       </div>
-    </div>
 
-    <div id="feed"></div>
-  </main>
+      <div id="feed"></div>
+    </main>
 
-  <aside class="sidebar-right">
-    <div style="position:relative;">
-      <input type="text" placeholder="Search flock…" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.55rem 0.9rem 0.55rem 2.35rem;font-family:'Instrument Sans',sans-serif;font-size:0.85rem;color:var(--text);outline:none;transition:border-color 0.15s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-      <svg style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    </div>
+    <aside class="sidebar-right">
+      <div style="position:relative;">
+        <input type="text" placeholder="Search flock…"
+          style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.55rem 0.9rem 0.55rem 2.35rem;font-family:'Instrument Sans',sans-serif;font-size:0.85rem;color:var(--text);outline:none;transition:border-color 0.15s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        <svg
+          style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;"
+          width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      </div>
 
-    <div class="widget">
-      <div class="widget-title">People to follow</div>
-      <div id="follow-list"></div>
-    </div>
+      <div class="widget">
+        <div class="widget-title">People to follow</div>
+        <div id="follow-list"></div>
+      </div>
 
-    <div class="widget">
-      <div class="widget-title">Topics</div>
-      <div style="display:flex;flex-wrap:wrap;margin:-0.2rem;" id="topics"></div>
-    </div>
-  </aside>
-</div>
+      <div class="widget">
+        <div class="widget-title">Topics</div>
+        <div style="display:flex;flex-wrap:wrap;margin:-0.2rem;" id="topics"></div>
+      </div>
+    </aside>
+  </div>
 
-<div class="modal-bg" id="compose-modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <div class="serif" style="font-size:1.1rem;">New Post</div>
-      <button class="close-btn" onclick="closeModal('compose-modal')">✕</button>
-    </div>
-    <div style="display:flex;gap:0.9rem;">
-      <div class="avatar" style="width:40px;height:40px;background:#1e2d14;color:var(--accent);">RA</div>
-      <div style="flex:1;">
-        <textarea id="compose-input" rows="4" class="compose-textarea" placeholder="What's happening?" style="font-size:1rem;min-height:110px;"></textarea>
-        <div id="compose-img-preview" style="display:none;margin-top:0.5rem;"></div>
-        <div style="border-top:1px solid var(--border);padding-top:0.75rem;display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;">
-          <div style="display:flex;gap:0.25rem;">
-            <button class="icon-btn" onclick="toggleImgOption()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            </button>
+  <div class="modal-bg" id="compose-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div class="serif" style="font-size:1.1rem;">New Post</div>
+        <button class="close-btn" onclick="closeModal('compose-modal')">✕</button>
+      </div>
+      <div style="display:flex;gap:0.9rem;">
+        <div class="avatar" style="width:40px;height:40px;background:#1e2d14;color:var(--accent);">RA</div>
+        <div style="flex:1;">
+          <textarea id="compose-input" rows="4" class="compose-textarea" placeholder="What's happening?"
+            style="font-size:1rem;min-height:110px;"></textarea>
+          <div id="compose-img-preview" style="display:none;margin-top:0.5rem;"></div>
+          <div
+            style="border-top:1px solid var(--border);padding-top:0.75rem;display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;">
+            <div style="display:flex;gap:0.25rem;">
+              <button class="icon-btn" onclick="toggleImgOption()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </button>
+            </div>
+            <button class="post-btn-sm" onclick="submitPost()" style="padding:0.5rem 1.4rem;font-size:0.875rem;">Post
+              it</button>
           </div>
-          <button class="post-btn-sm" onclick="submitPost()" style="padding:0.5rem 1.4rem;font-size:0.875rem;">Post it</button>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="modal-bg" id="profile-modal">
-  <div class="profile-modal-box">
-    <div class="profile-cover">
-      <button class="close-btn" onclick="closeModal('profile-modal')" style="position:absolute;top:0.75rem;right:0.75rem;background:rgba(0,0,0,0.4);">✕</button>
-      <div class="avatar" style="width:52px;height:52px;background:#1e2d14;color:var(--accent);position:absolute;bottom:-24px;left:1.25rem;border:3px solid var(--surface);font-size:0.95rem;">RA</div>
-    </div>
-    <div style="padding:2rem 1.25rem 1.5rem;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.6rem;">
-        <div>
-          <div style="font-weight:700;font-size:1.05rem;">Roland Adams</div>
-          <div style="color:var(--text3);font-size:0.82rem;margin-top:0.1rem;">@R_coredev</div>
-        </div>
-        <button style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:9px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'Instrument Sans',sans-serif;">Edit</button>
+  <div class="modal-bg" id="profile-modal">
+    <div class="profile-modal-box">
+      <div class="profile-cover">
+        <button class="close-btn" onclick="closeModal('profile-modal')"
+          style="position:absolute;top:0.75rem;right:0.75rem;background:rgba(0,0,0,0.4);">✕</button>
+        <div class="avatar"
+          style="width:52px;height:52px;background:#1e2d14;color:var(--accent);position:absolute;bottom:-24px;left:1.25rem;border:3px solid var(--surface);font-size:0.95rem;">
+          RA</div>
       </div>
-      <p style="font-size:0.875rem;color:var(--text2);line-height:1.55;margin-bottom:1rem;">Full-stack dev building stuff on the internet. Lagos, NG 🇳🇬 · Open to collab.</p>
-      <div class="divider"></div>
-      <div style="display:flex;gap:2rem;padding-top:0.75rem;">
-        <div class="stat-pill">
-          <span style="font-weight:700;font-size:1rem;">148</span>
-          <span style="font-size:0.75rem;color:var(--text3);">Following</span>
+      <div style="padding:2rem 1.25rem 1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.6rem;">
+          <div>
+            <div style="font-weight:700;font-size:1.05rem;">Roland Adams</div>
+            <div style="color:var(--text3);font-size:0.82rem;margin-top:0.1rem;">@R_coredev</div>
+          </div>
+          <button
+            style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:9px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'Instrument Sans',sans-serif;">Edit</button>
         </div>
-        <div class="stat-pill">
-          <span style="font-weight:700;font-size:1rem;">2.4K</span>
-          <span style="font-size:0.75rem;color:var(--text3);">Followers</span>
-        </div>
-        <div class="stat-pill">
-          <span style="font-weight:700;font-size:1rem;">312</span>
-          <span style="font-size:0.75rem;color:var(--text3);">Posts</span>
+        <p style="font-size:0.875rem;color:var(--text2);line-height:1.55;margin-bottom:1rem;">Full-stack dev building
+          stuff on the internet. Lagos, NG 🇳🇬 · Open to collab.</p>
+        <div class="divider"></div>
+        <div style="display:flex;gap:2rem;padding-top:0.75rem;">
+          <div class="stat-pill">
+            <span style="font-weight:700;font-size:1rem;">148</span>
+            <span style="font-size:0.75rem;color:var(--text3);">Following</span>
+          </div>
+          <div class="stat-pill">
+            <span style="font-weight:700;font-size:1rem;">2.4K</span>
+            <span style="font-size:0.75rem;color:var(--text3);">Followers</span>
+          </div>
+          <div class="stat-pill">
+            <span style="font-weight:700;font-size:1rem;">312</span>
+            <span style="font-size:0.75rem;color:var(--text3);">Posts</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="modal-bg" id="notif-modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <div class="serif" style="font-size:1.1rem;">Notifications</div>
-      <button class="close-btn" onclick="closeModal('notif-modal')">✕</button>
+  <div class="modal-bg" id="notif-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div class="serif" style="font-size:1.1rem;">Notifications</div>
+        <button class="close-btn" onclick="closeModal('notif-modal')">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;" id="notif-list"></div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:0.6rem;" id="notif-list"></div>
   </div>
-</div>
 
-<script>
-const me = { id: 0, name: "Roland Adams", handle: "R_coredev", initials: "RA", bg: "#1e2d14", fg: "var(--accent)" };
+  <script>
+    const me = { id: 0, name: "Roland Adams", handle: "R_coredev", initials: "RA", bg: "#1e2d14", fg: "var(--accent)" };
 
-const users = [
-  { id: 1, name: "Akintola Steve", handle: "AkintolaDev", initials: "AS", bg: "#1a1e2e", fg: "#7eb8f7" },
-  { id: 2, name: "Chiamaka Obi", handle: "chiamaka_obi", initials: "CO", bg: "#2a1a2e", fg: "#d07ef7" },
-  { id: 3, name: "Tunde Builds", handle: "TundeBuilds", initials: "TB", bg: "#1e2a1a", fg: "#7ef7a4" },
-  { id: 4, name: "Kemi Lagos", handle: "kemi_lagos", initials: "KL", bg: "#2e1e1a", fg: "#f79e7e" },
-  { id: 5, name: "Dev Diary", handle: "devdiary_ng", initials: "DD", bg: "#1a2a2a", fg: "#7ef0f7" },
-];
+    const users = [
+      { id: 1, name: "Akintola Steve", handle: "AkintolaDev", initials: "AS", bg: "#1a1e2e", fg: "#7eb8f7" },
+      { id: 2, name: "Chiamaka Obi", handle: "chiamaka_obi", initials: "CO", bg: "#2a1a2e", fg: "#d07ef7" },
+      { id: 3, name: "Tunde Builds", handle: "TundeBuilds", initials: "TB", bg: "#1e2a1a", fg: "#7ef7a4" },
+      { id: 4, name: "Kemi Lagos", handle: "kemi_lagos", initials: "KL", bg: "#2e1e1a", fg: "#f79e7e" },
+      { id: 5, name: "Dev Diary", handle: "devdiary_ng", initials: "DD", bg: "#1a2a2a", fg: "#7ef0f7" },
+    ];
 
-const imgColors = [
-  { bg: "linear-gradient(135deg,#1a2a1e 0%,#2d4a35 100%)", label: "🌿 nature shot" },
-  { bg: "linear-gradient(135deg,#1a1e2e 0%,#2d3560 100%)", label: "🌃 night vibes" },
-  { bg: "linear-gradient(135deg,#2e1e2a 0%,#4a2d40 100%)", label: "📸 street photo" },
-  { bg: "linear-gradient(135deg,#2a2010 0%,#4a3820 100%)", label: "☕ morning mood" },
-  { bg: "linear-gradient(135deg,#1a2020 0%,#253535 100%)", label: "💻 desk setup" },
-];
+    const imgColors = [
+      { bg: "linear-gradient(135deg,#1a2a1e 0%,#2d4a35 100%)", label: "🌿 nature shot" },
+      { bg: "linear-gradient(135deg,#1a1e2e 0%,#2d3560 100%)", label: "🌃 night vibes" },
+      { bg: "linear-gradient(135deg,#2e1e2a 0%,#4a2d40 100%)", label: "📸 street photo" },
+      { bg: "linear-gradient(135deg,#2a2010 0%,#4a3820 100%)", label: "☕ morning mood" },
+      { bg: "linear-gradient(135deg,#1a2020 0%,#253535 100%)", label: "💻 desk setup" },
+    ];
 
-let posts = [
-  { id: 1, user: users[0], time: "2h", text: "System design is a skill that compounds. The more you practice thinking in systems, the easier it becomes to see why architecture decisions get made.\n\nBig fan of starting small and evolving.", likes: 346, comments: 15, reposts: 51, liked: false, hasImg: false },
-  { id: 2, user: users[1], time: "3h", text: "Finally finished the rebrand for a Lagos fintech 🎉\n\nFull branding kit, landing page + design system in 3 weeks. Proud of this one.", likes: 812, comments: 47, reposts: 120, liked: false, hasImg: true, imgIdx: 2 },
-  { id: 3, user: users[2], time: "5h", text: "Hot take: most apps have a monetization problem, not a growth problem. You can have 100k users and still be broke.\n\nRevenue thinking > vanity metrics.", likes: 1240, comments: 88, reposts: 310, liked: false, hasImg: false },
-  { id: 4, user: users[3], time: "8h", text: "Morning from Lagos 🌅\n\nStarted journaling again after a 6 month break. There's something about writing with a pen that clears the mental backlog.", likes: 533, comments: 29, reposts: 76, liked: false, hasImg: true, imgIdx: 3 },
-  { id: 5, user: users[4], time: "1d", text: "Just pushed a feature I've been scared to ship for 2 weeks. It's live. Nothing broke. Lesson: the fear is always worse than the deploy.", likes: 2890, comments: 441, reposts: 762, liked: false, hasImg: false },
-  { id: 6, user: users[0], time: "1d", text: "My desk setup after finally cleaning the cable mess 😅", likes: 198, comments: 34, reposts: 22, liked: false, hasImg: true, imgIdx: 4 },
-];
+    let posts = [
+      { id: 1, user: users[0], time: "2h", text: "System design is a skill that compounds. The more you practice thinking in systems, the easier it becomes to see why architecture decisions get made.\n\nBig fan of starting small and evolving.", likes: 346, comments: 15, reposts: 51, liked: false, hasImg: false },
+      { id: 2, user: users[1], time: "3h", text: "Finally finished the rebrand for a Lagos fintech 🎉\n\nFull branding kit, landing page + design system in 3 weeks. Proud of this one.", likes: 812, comments: 47, reposts: 120, liked: false, hasImg: true, imgIdx: 2 },
+      { id: 3, user: users[2], time: "5h", text: "Hot take: most apps have a monetization problem, not a growth problem. You can have 100k users and still be broke.\n\nRevenue thinking > vanity metrics.", likes: 1240, comments: 88, reposts: 310, liked: false, hasImg: false },
+      { id: 4, user: users[3], time: "8h", text: "Morning from Lagos 🌅\n\nStarted journaling again after a 6 month break. There's something about writing with a pen that clears the mental backlog.", likes: 533, comments: 29, reposts: 76, liked: false, hasImg: true, imgIdx: 3 },
+      { id: 5, user: users[4], time: "1d", text: "Just pushed a feature I've been scared to ship for 2 weeks. It's live. Nothing broke. Lesson: the fear is always worse than the deploy.", likes: 2890, comments: 441, reposts: 762, liked: false, hasImg: false },
+      { id: 6, user: users[0], time: "1d", text: "My desk setup after finally cleaning the cable mess 😅", likes: 198, comments: 34, reposts: 22, liked: false, hasImg: true, imgIdx: 4 },
+    ];
 
-let nextId = 7;
-const following = new Set([1, 3]);
-let pendingImg = false;
+    let nextId = 7;
+    const following = new Set([1, 3]);
+    let pendingImg = false;
 
-const topics = ["#LagosTech", "#BuildInPublic", "#SystemDesign", "#OpenSource", "#Startups", "#UIDesign", "#RemoteWork", "#JavaScript"];
-const notifs = [
-  { icon: "❤️", html: "<strong>Akintola Dev</strong> liked your post", time: "3m" },
-  { icon: "🔁", html: "<strong>Kemi Lagos</strong> reposted your thread", time: "21m" },
-  { icon: "👤", html: "<strong>Dev Diary NG</strong> followed you", time: "1h" },
-  { icon: "💬", html: "<strong>Chiamaka Obi</strong> replied: \"This is facts 🔥\"", time: "2h" },
-];
+    const topics = ["#LagosTech", "#BuildInPublic", "#SystemDesign", "#OpenSource", "#Startups", "#UIDesign", "#RemoteWork", "#JavaScript"];
+    const notifs = [
+      { icon: "❤️", html: "<strong>Akintola Dev</strong> liked your post", time: "3m" },
+      { icon: "🔁", html: "<strong>Kemi Lagos</strong> reposted your thread", time: "21m" },
+      { icon: "👤", html: "<strong>Dev Diary NG</strong> followed you", time: "1h" },
+      { icon: "💬", html: "<strong>Chiamaka Obi</strong> replied: \"This is facts 🔥\"", time: "2h" },
+    ];
 
-function fmt(n) {
-  if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + "K";
-  return n;
-}
+    function fmt(n) {
+      if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + "K";
+      return n;
+    }
 
-function renderFeed() {
-  document.getElementById('feed').innerHTML = posts.map((p, i) => {
-    const imgHtml = p.hasImg ? `<div class="post-img-placeholder" style="background:${imgColors[p.imgIdx].bg};">
+    function renderFeed() {
+      document.getElementById('feed').innerHTML = posts.map((p, i) => {
+        const imgHtml = p.hasImg ? `<div class="post-img-placeholder" style="background:${imgColors[p.imgIdx].bg};">
       <span style="font-size:0.85rem;opacity:0.5;">${imgColors[p.imgIdx].label}</span>
     </div>` : '';
-    return `<div class="post-card" style="animation-delay:${i * 0.04}s">
+        return `<div class="post-card" style="animation-delay:${i * 0.04}s">
       <div style="display:flex;gap:0.85rem;">
         <div class="avatar" style="width:38px;height:38px;background:${p.user.bg};color:${p.user.fg};">${p.user.initials}</div>
         <div style="flex:1;min-width:0;">
@@ -699,12 +865,12 @@ function renderFeed() {
         </div>
       </div>
     </div>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-function renderFollowList() {
-  const suggestions = users.filter(u => !following.has(u.id)).slice(0, 3);
-  document.getElementById('follow-list').innerHTML = suggestions.map(u => `
+    function renderFollowList() {
+      const suggestions = users.filter(u => !following.has(u.id)).slice(0, 3);
+      document.getElementById('follow-list').innerHTML = suggestions.map(u => `
     <div class="person-row">
       <div class="avatar" style="width:34px;height:34px;background:${u.bg};color:${u.fg};">${u.initials}</div>
       <div style="min-width:0;flex:1;">
@@ -713,14 +879,14 @@ function renderFollowList() {
       </div>
       <button class="follow-btn ${following.has(u.id) ? 'on' : ''}" onclick="toggleFollow(${u.id}, this)">${following.has(u.id) ? 'Following' : 'Follow'}</button>
     </div>`).join('');
-}
+    }
 
-function renderTopics() {
-  document.getElementById('topics').innerHTML = topics.map(t => `<span class="tag-pill">${t}</span>`).join('');
-}
+    function renderTopics() {
+      document.getElementById('topics').innerHTML = topics.map(t => `<span class="tag-pill">${t}</span>`).join('');
+    }
 
-function renderNotifs() {
-  document.getElementById('notif-list').innerHTML = notifs.map(n => `
+    function renderNotifs() {
+      document.getElementById('notif-list').innerHTML = notifs.map(n => `
     <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.65rem;border-radius:10px;background:var(--surface2);">
       <span style="font-size:1.1rem;flex-shrink:0;">${n.icon}</span>
       <div style="flex:1;">
@@ -728,112 +894,113 @@ function renderNotifs() {
         <div style="font-size:0.75rem;color:var(--text3);margin-top:0.2rem;">${n.time} ago</div>
       </div>
     </div>`).join('');
-}
+    }
 
-function toggleLike(id, e) {
-  e.stopPropagation();
-  const p = posts.find(p => p.id === id);
-  p.liked = !p.liked;
-  p.likes += p.liked ? 1 : -1;
-  renderFeed();
-}
+    function toggleLike(id, e) {
+      e.stopPropagation();
+      const p = posts.find(p => p.id === id);
+      p.liked = !p.liked;
+      p.likes += p.liked ? 1 : -1;
+      renderFeed();
+    }
 
-function repost(id, e) {
-  e.stopPropagation();
-  const p = posts.find(p => p.id === id);
-  p.reposts += 1;
-  renderFeed();
-}
+    function repost(id, e) {
+      e.stopPropagation();
+      const p = posts.find(p => p.id === id);
+      p.reposts += 1;
+      renderFeed();
+    }
 
-function replyTo(handle, e) {
-  e.stopPropagation();
-  openComposeModal();
-  setTimeout(() => {
-    const el = document.getElementById('compose-input');
-    el.value = `@${handle} `;
-    el.focus();
-    el.setSelectionRange(el.value.length, el.value.length);
-  }, 220);
-}
+    function replyTo(handle, e) {
+      e.stopPropagation();
+      openComposeModal();
+      setTimeout(() => {
+        const el = document.getElementById('compose-input');
+        el.value = `@${handle} `;
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+      }, 220);
+    }
 
-function toggleFollow(id, btn) {
-  if (following.has(id)) {
-    following.delete(id);
-    btn.textContent = 'Follow';
-    btn.classList.remove('on');
-  } else {
-    following.add(id);
-    btn.textContent = 'Following';
-    btn.classList.add('on');
-  }
-  renderFollowList();
-}
+    function toggleFollow(id, btn) {
+      if (following.has(id)) {
+        following.delete(id);
+        btn.textContent = 'Follow';
+        btn.classList.remove('on');
+      } else {
+        following.add(id);
+        btn.textContent = 'Following';
+        btn.classList.add('on');
+      }
+      renderFollowList();
+    }
 
-function quickPost() {
-  const text = document.getElementById('quick-input').value.trim();
-  if (!text) return;
-  posts.unshift({ id: nextId++, user: me, time: "now", text, likes: 0, comments: 0, reposts: 0, liked: false, hasImg: pendingImg, imgIdx: pendingImg ? 0 : undefined });
-  document.getElementById('quick-input').value = '';
-  pendingImg = false;
-  renderFeed();
-}
+    function quickPost() {
+      const text = document.getElementById('quick-input').value.trim();
+      if (!text) return;
+      posts.unshift({ id: nextId++, user: me, time: "now", text, likes: 0, comments: 0, reposts: 0, liked: false, hasImg: pendingImg, imgIdx: pendingImg ? 0 : undefined });
+      document.getElementById('quick-input').value = '';
+      pendingImg = false;
+      renderFeed();
+    }
 
-function submitPost() {
-  const text = document.getElementById('compose-input').value.trim();
-  if (!text) return;
-  posts.unshift({ id: nextId++, user: me, time: "now", text, likes: 0, comments: 0, reposts: 0, liked: false, hasImg: pendingImg, imgIdx: pendingImg ? 0 : undefined });
-  document.getElementById('compose-input').value = '';
-  document.getElementById('compose-img-preview').style.display = 'none';
-  pendingImg = false;
-  closeModal('compose-modal');
-  renderFeed();
-}
+    function submitPost() {
+      const text = document.getElementById('compose-input').value.trim();
+      if (!text) return;
+      posts.unshift({ id: nextId++, user: me, time: "now", text, likes: 0, comments: 0, reposts: 0, liked: false, hasImg: pendingImg, imgIdx: pendingImg ? 0 : undefined });
+      document.getElementById('compose-input').value = '';
+      document.getElementById('compose-img-preview').style.display = 'none';
+      pendingImg = false;
+      closeModal('compose-modal');
+      renderFeed();
+    }
 
-function simulateImage() {
-  pendingImg = true;
-}
+    function simulateImage() {
+      pendingImg = true;
+    }
 
-function toggleImgOption() {
-  pendingImg = !pendingImg;
-  const preview = document.getElementById('compose-img-preview');
-  if (pendingImg) {
-    preview.style.display = 'block';
-    preview.innerHTML = `<div style="background:${imgColors[0].bg};border-radius:10px;height:80px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--text3);">Image attached ${imgColors[0].label}</div>`;
-  } else {
-    preview.style.display = 'none';
-  }
-}
+    function toggleImgOption() {
+      pendingImg = !pendingImg;
+      const preview = document.getElementById('compose-img-preview');
+      if (pendingImg) {
+        preview.style.display = 'block';
+        preview.innerHTML = `<div style="background:${imgColors[0].bg};border-radius:10px;height:80px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--text3);">Image attached ${imgColors[0].label}</div>`;
+      } else {
+        preview.style.display = 'none';
+      }
+    }
 
-function openComposeModal() {
-  document.getElementById('compose-modal').classList.add('open');
-  setTimeout(() => document.getElementById('compose-input').focus(), 200);
-}
+    function openComposeModal() {
+      document.getElementById('compose-modal').classList.add('open');
+      setTimeout(() => document.getElementById('compose-input').focus(), 200);
+    }
 
-function openProfileModal() {
-  document.getElementById('profile-modal').classList.add('open');
-}
+    function openProfileModal() {
+      document.getElementById('profile-modal').classList.add('open');
+    }
 
-function openNotifModal() {
-  renderNotifs();
-  document.getElementById('notif-modal').classList.add('open');
-}
+    function openNotifModal() {
+      renderNotifs();
+      document.getElementById('notif-modal').classList.add('open');
+    }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
 
-function setActive(el) {
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
+    function setActive(el) {
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
 
-document.querySelectorAll('.modal-bg').forEach(bg => {
-  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
-});
+    document.querySelectorAll('.modal-bg').forEach(bg => {
+      bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+    });
 
-renderFeed();
-renderFollowList();
-renderTopics();
-</script>
+    renderFeed();
+    renderFollowList();
+    renderTopics();
+  </script>
 </body>
+
 </html>

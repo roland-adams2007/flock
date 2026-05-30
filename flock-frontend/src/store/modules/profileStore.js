@@ -15,9 +15,14 @@ export const useProfileStore = create(
       isLoadingReplies: false,
       isLoadingLikedPosts: false,
       isLoadingReposts: false,
+      isLoadingFollowers: false,
+      isLoadingFollowing: false,
 
       isFollowing: false,
       isFollowLoading: false,
+
+      followers: [],
+      following: [],
 
       error: null,
 
@@ -56,7 +61,9 @@ export const useProfileStore = create(
         }
       },
 
-      fetchPosts: async (username, token, page = 1) => {
+      fetchPosts: async (username, token, page = 1, force = false) => {
+        const profile = get().profiles[username];
+        if (!force && profile?.posts) return;
         set({ isLoadingPosts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -72,7 +79,9 @@ export const useProfileStore = create(
         }
       },
 
-      fetchReplies: async (username, token, page = 1) => {
+      fetchReplies: async (username, token, page = 1, force = false) => {
+        const profile = get().profiles[username];
+        if (!force && profile?.replies) return;
         set({ isLoadingReplies: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -88,7 +97,9 @@ export const useProfileStore = create(
         }
       },
 
-      fetchLikedPosts: async (username, token, page = 1) => {
+      fetchLikedPosts: async (username, token, page = 1, force = false) => {
+        const profile = get().profiles[username];
+        if (!force && profile?.likedPosts) return;
         set({ isLoadingLikedPosts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -104,7 +115,9 @@ export const useProfileStore = create(
         }
       },
 
-      fetchReposts: async (username, token, page = 1) => {
+      fetchReposts: async (username, token, page = 1, force = false) => {
+        const profile = get().profiles[username];
+        if (!force && profile?.reposts) return;
         set({ isLoadingReposts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -120,98 +133,29 @@ export const useProfileStore = create(
         }
       },
 
-      createPost: async (content, token, username) => {
+      fetchFollowers: async (username, token) => {
+        set({ isLoadingFollowers: true });
         try {
-          const { data } = await axios.post(
-            `${API_BASE}/posts`,
-            { content },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (data.success && username) {
-            set((state) => {
-              const profile = state.profiles[username];
-              if (!profile || !profile.posts) return {};
-              return {
-                profiles: {
-                  ...state.profiles,
-                  [username]: {
-                    ...profile,
-                    posts: {
-                      ...profile.posts,
-                      data: [data.post, ...(profile.posts.data ?? [])],
-                      total: (profile.posts.total ?? 0) + 1,
-                    },
-                  },
-                },
-              };
-            });
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const { data } = await axios.get(`${API_BASE}/profile/${username}/followers`, { headers });
+          if (data.success) {
+            set({ followers: data.followers, isLoadingFollowers: false });
           }
-          return data;
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to create post" });
-          return { error: true };
+          set({ error: err.response?.data?.message || "Failed to load followers", isLoadingFollowers: false });
         }
       },
 
-      deletePost: async (postId, token) => {
+      fetchFollowing: async (username, token) => {
+        set({ isLoadingFollowing: true });
         try {
-          await axios.delete(`${API_BASE}/posts/${postId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const { data } = await axios.get(`${API_BASE}/profile/${username}/following`, { headers });
+          if (data.success) {
+            set({ following: data.following, isLoadingFollowing: false });
+          }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to delete post" });
-        }
-      },
-
-      editPost: async (postId, content, token) => {
-        try {
-          const { data } = await axios.put(
-            `${API_BASE}/posts/${postId}`,
-            { content },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          return data;
-        } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to edit post" });
-          return { error: true };
-        }
-      },
-
-      likePost: async (postId, token) => {
-        try {
-          await axios.post(`${API_BASE}/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
-        } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to like post" });
-        }
-      },
-
-      unlikePost: async (postId, token) => {
-        try {
-          await axios.delete(`${API_BASE}/posts/${postId}/like`, { headers: { Authorization: `Bearer ${token}` } });
-        } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to unlike post" });
-        }
-      },
-
-      repostPost: async (postId, token) => {
-        try {
-          await axios.post(`${API_BASE}/posts/${postId}/repost`, {}, { headers: { Authorization: `Bearer ${token}` } });
-        } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to repost" });
-        }
-      },
-
-      createComment: async (postId, content, token) => {
-        try {
-          const { data } = await axios.post(
-            `${API_BASE}/posts/${postId}/comments`,
-            { content },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          return data;
-        } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to comment" });
-          return { error: true };
+          set({ error: err.response?.data?.message || "Failed to load following", isLoadingFollowing: false });
         }
       },
 
@@ -240,6 +184,24 @@ export const useProfileStore = create(
         }
       },
 
+      uploadAvatar: async (file, token) => {
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+          const { data } = await axios.post(`${API_BASE}/media/upload`, formData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          });
+          if (!data.url) return { error: true };
+          return { url: data.url };
+        } catch (err) {
+          set({ error: err.response?.data?.message || "Failed to upload avatar" });
+          return { error: true };
+        }
+      },
+
       followUser: async (username, token) => {
         set({ isFollowLoading: true });
         try {
@@ -251,7 +213,7 @@ export const useProfileStore = create(
           if (data.success) {
             set((state) => {
               const profile = state.profiles[username];
-              if (!profile) return {};
+              if (!profile) return { isFollowing: true, isFollowLoading: false };
               return {
                 profiles: { ...state.profiles, [username]: { ...profile, followers_count: profile.followers_count + 1 } },
                 isFollowing: true,
@@ -274,7 +236,7 @@ export const useProfileStore = create(
           if (data.success) {
             set((state) => {
               const profile = state.profiles[username];
-              if (!profile) return {};
+              if (!profile) return { isFollowing: false, isFollowLoading: false };
               return {
                 profiles: { ...state.profiles, [username]: { ...profile, followers_count: Math.max(0, profile.followers_count - 1) } },
                 isFollowing: false,

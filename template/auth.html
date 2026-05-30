@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0c0c0e;
+  --surface: #141416;
+  --surface2: #1c1c1f;
+  --border: #252528;
+  --border2: #2e2e32;
+  --text: #f0ede8;
+  --text2: #9995a0;
+  --text3: #5c5966;
+  --accent: #c8f058;
+  --accent-dim: #c8f05820;
+  --accent-text: #0c0c0e;
+  --red: #ff5e5e;
+}
+
+html, body { height: 100%; font-family: 'Instrument Sans', sans-serif; background: var(--bg); color: var(--text); }
+::-webkit-scrollbar { width: 0; }
+
+.page {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.side-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.side-image canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.side-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 30%, var(--bg) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.auth-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 2.5rem 3rem 1rem;
+  position: relative;
+  z-index: 3;
+}
+
+.auth-inner {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.brand {
+  font-family: 'Instrument Serif', serif;
+  font-size: 2rem;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.brand-dot {
+  width: 9px; height: 9px;
+  background: var(--accent);
+  border-radius: 50%;
+  margin-top: 3px;
+}
+
+.auth-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+  letter-spacing: 0.01em;
+}
+
+.google-btn:hover { background: #222226; transform: translateY(-1px); }
+.google-btn:active { transform: translateY(0); }
+.google-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text3);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.email-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input-field {
+  flex: 1;
+  padding: 0.82rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input-field::placeholder { color: var(--text3); }
+.input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.input-field.error { border-color: var(--red); }
+
+.email-submit {
+  padding: 0.82rem 1.1rem;
+  background: var(--accent);
+  color: var(--accent-text);
+  border: none;
+  border-radius: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.12s, box-shadow 0.15s;
+  flex-shrink: 0;
+}
+
+.email-submit:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-dim); }
+.email-submit:active { transform: translateY(0); }
+
+@media (max-width: 720px) {
+  .page { grid-template-columns: 1fr; }
+  .side-image { display: none; }
+  .auth-col { padding: 2.5rem 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="side-image">
+    <canvas id="c"></canvas>
+  </div>
+
+  <div class="auth-col">
+    <div class="auth-inner">
+
+      <div class="brand">
+        Flock
+        <div class="brand-dot"></div>
+      </div>
+
+      <div class="auth-fields">
+
+        <button class="google-btn" onclick="handleGoogle()">
+          <svg class="google-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="divider">or</div>
+
+        <div class="email-row">
+          <input class="input-field" type="email" id="email" placeholder="Enter your email" autocomplete="email"/>
+          <button class="email-submit" onclick="handleEmail()">Continue</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+const ACCENT = '#c8f058';
+const BG = '#0a0d0a';
+
+let W, H, nodes, mouse = { x: -999, y: -999 };
+
+function resize() {
+  const el = canvas.parentElement;
+  W = canvas.width = el.offsetWidth;
+  H = canvas.height = el.offsetHeight;
+  initNodes();
+}
+
+function initNodes() {
+  const count = Math.floor((W * H) / 9000);
+  nodes = Array.from({ length: count }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.35,
+    vy: (Math.random() - 0.5) * 0.35,
+    r: Math.random() * 1.8 + 1,
+    pulse: Math.random() * Math.PI * 2,
+  }));
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  const glow1 = ctx.createRadialGradient(W * 0.25, H * 0.3, 0, W * 0.25, H * 0.3, W * 0.55);
+  glow1.addColorStop(0, 'rgba(30,58,22,0.65)');
+  glow1.addColorStop(1, 'rgba(10,13,10,0)');
+  ctx.fillStyle = glow1;
+  ctx.fillRect(0, 0, W, H);
+
+  const glow2 = ctx.createRadialGradient(W * 0.7, H * 0.72, 0, W * 0.7, H * 0.72, W * 0.45);
+  glow2.addColorStop(0, 'rgba(22,42,16,0.5)');
+  glow2.addColorStop(1, 'rgba(10,13,10,0)');
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, W, H);
+
+  const t = Date.now() * 0.001;
+
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i];
+
+    a.x += a.vx;
+    a.y += a.vy;
+    if (a.x < 0 || a.x > W) a.vx *= -1;
+    if (a.y < 0 || a.y > H) a.vy *= -1;
+
+    const dx = mouse.x - a.x;
+    const dy = mouse.y - a.y;
+    const md = Math.sqrt(dx * dx + dy * dy);
+    if (md < 100) {
+      a.x -= dx * 0.015;
+      a.y -= dy * 0.015;
+    }
+
+    for (let j = i + 1; j < nodes.length; j++) {
+      const b = nodes[j];
+      const ex = b.x - a.x;
+      const ey = b.y - a.y;
+      const d = Math.sqrt(ex * ex + ey * ey);
+      const maxD = 110;
+      if (d < maxD) {
+        const alpha = (1 - d / maxD) * 0.22;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = `rgba(200,240,88,${alpha})`;
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
+    }
+
+    a.pulse += 0.018;
+    const pulse = Math.sin(a.pulse) * 0.4 + 0.7;
+    const r = a.r * pulse;
+
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, r + 5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(200,240,88,0.06)`;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(200,240,88,${0.5 * pulse})`;
+    ctx.fill();
+  }
+
+  requestAnimationFrame(draw);
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouse.x = -999; mouse.y = -999;
+});
+
+window.addEventListener('resize', resize);
+resize();
+draw();
+
+function handleGoogle() {
+  const btn = document.querySelector('.google-btn');
+  btn.style.opacity = '0.5';
+  btn.style.pointerEvents = 'none';
+  btn.innerHTML = '<span style="font-size:0.85rem;color:var(--text2)">Redirecting…</span>';
+}
+
+function handleEmail() {
+  const input = document.getElementById('email');
+  const val = input.value.trim();
+  if (!val || !val.includes('@')) {
+    input.classList.add('error');
+    input.focus();
+    return;
+  }
+  input.classList.remove('error');
+  const btn = document.querySelector('.email-submit');
+  btn.textContent = '…';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+}
+
+document.getElementById('email').addEventListener('input', function() {
+  this.classList.remove('error');
+});
+
+document.getElementById('email').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') handleEmail();
+});
+</script>
+</body>
+</html>
