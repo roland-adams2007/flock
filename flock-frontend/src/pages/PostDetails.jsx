@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuthStore } from "../store/store";
-import { usePostStore } from "../store/store";
+import { useAuthStore, usePostStore } from "../store/store";
 
 function fmt(n) {
   if (!n && n !== 0) return "0";
@@ -37,18 +36,20 @@ function timeAgo(dateStr) {
   });
 }
 
-function Avatar({ src, name, size = 38 }) {
+function Avatar({ src, name, size = 38, onClick }) {
   if (src) {
     return (
       <img
         src={src}
         alt={name}
+        onClick={onClick}
         style={{
           width: size,
           height: size,
           borderRadius: "50%",
           objectFit: "cover",
           flexShrink: 0,
+          cursor: onClick ? "pointer" : "default",
         }}
       />
     );
@@ -56,12 +57,14 @@ function Avatar({ src, name, size = 38 }) {
   return (
     <div
       className="avatar"
+      onClick={onClick}
       style={{
         width: size,
         height: size,
         background: "#1e2d14",
         color: "var(--accent)",
         flexShrink: 0,
+        cursor: onClick ? "pointer" : "default",
       }}
     >
       {getInitials(name)}
@@ -119,20 +122,11 @@ function PostSkeleton() {
         <SkeletonLine w="85%" h={16} />
         <SkeletonLine w="60%" h={16} />
       </div>
-      <div
-        style={{
-          marginTop: "1rem",
-          borderRadius: 14,
-          background: "var(--surface2)",
-          height: 220,
-          animation: "skelPulse 1.4s ease-in-out infinite",
-        }}
-      />
     </div>
   );
 }
 
-function CommentSkeleton() {
+function ReplySkeleton() {
   return (
     <div
       style={{
@@ -172,7 +166,6 @@ function CommentSkeleton() {
 function MediaGrid({ media, onOpenLightbox }) {
   if (!media || media.length === 0) return null;
   const count = media.length;
-
   const getGridStyle = () => {
     if (count === 1) return { gridTemplateColumns: "1fr" };
     if (count === 2)
@@ -184,7 +177,6 @@ function MediaGrid({ media, onOpenLightbox }) {
       };
     return { gridTemplateColumns: "1fr 1fr", gridTemplateRows: "160px 160px" };
   };
-
   return (
     <div
       style={{
@@ -269,9 +261,9 @@ function Lightbox({
   myInfo,
   isAuthenticated,
   postId,
-  comments,
-  isLoadingComments,
-  onSendComment,
+  replies,
+  isLoadingReplies,
+  onSendReply,
 }) {
   const [current, setCurrent] = useState(startIndex);
   const [replyText, setReplyText] = useState("");
@@ -298,7 +290,7 @@ function Lightbox({
       return;
     }
     setReplying(true);
-    await onSendComment(replyText);
+    await onSendReply(replyText);
     setReplyText("");
     setReplying(false);
   };
@@ -546,7 +538,7 @@ function Lightbox({
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "0.5rem 0" }}>
-          {isLoadingComments ? (
+          {isLoadingReplies ? (
             <div
               style={{
                 padding: "1.5rem",
@@ -557,7 +549,7 @@ function Lightbox({
             >
               Loading replies…
             </div>
-          ) : comments.length === 0 ? (
+          ) : replies.length === 0 ? (
             <div
               style={{
                 padding: "1.5rem",
@@ -569,19 +561,24 @@ function Lightbox({
               No replies yet
             </div>
           ) : (
-            comments.map((c) => (
+            replies.map((r) => (
               <div
-                key={c.id}
+                key={r.id}
                 style={{
                   padding: "0.75rem 1.1rem",
                   borderBottom: "1px solid rgba(255,255,255,0.06)",
                   display: "flex",
                   gap: "0.6rem",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  onClose();
+                  navigate(`/${r.user?.username}/post/${r.id}`);
                 }}
               >
                 <Avatar
-                  src={c.user?.avatar}
-                  name={c.user?.display_name}
+                  src={r.user?.avatar}
+                  name={r.user?.display_name}
                   size={30}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -600,7 +597,7 @@ function Lightbox({
                         color: "#fff",
                       }}
                     >
-                      {c.user?.display_name}
+                      {r.user?.display_name}
                     </span>
                     <span
                       style={{
@@ -608,7 +605,7 @@ function Lightbox({
                         color: "rgba(255,255,255,0.35)",
                       }}
                     >
-                      @{c.user?.username}
+                      @{r.user?.username}
                     </span>
                     <span
                       style={{
@@ -616,7 +613,7 @@ function Lightbox({
                         color: "rgba(255,255,255,0.25)",
                       }}
                     >
-                      {timeAgo(c.created_at)}
+                      {timeAgo(r.created_at)}
                     </span>
                   </div>
                   <div
@@ -627,7 +624,24 @@ function Lightbox({
                       marginTop: "0.2rem",
                     }}
                   >
-                    {c.content}
+                    {r.content}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.75rem",
+                      marginTop: "0.4rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "0.72rem",
+                        color: "rgba(255,255,255,0.3)",
+                      }}
+                    >
+                      {fmt(r.counts?.likes ?? 0)} likes ·{" "}
+                      {fmt(r.counts?.replies ?? 0)} replies
+                    </span>
                   </div>
                 </div>
               </div>
@@ -724,148 +738,13 @@ function Lightbox({
   );
 }
 
-function ReplyModal({ postId, parentComment, token, myInfo, onClose }) {
-  const [text, setText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const { replyToComment, createComment } = usePostStore();
-
-  const submit = async () => {
-    if (!text.trim() || submitting) return;
-    setSubmitting(true);
-    if (parentComment) {
-      await replyToComment(postId, text, token, parentComment.id);
-    } else {
-      await createComment(postId, text, token);
-    }
-    setText("");
-    setSubmitting(false);
-    onClose();
-  };
-
-  return (
-    <div
-      className="modal-bg open"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="modal-box">
-        <div className="modal-head">
-          <div className="serif" style={{ fontSize: "1.1rem" }}>
-            {parentComment ? "Reply to comment" : "Reply"}
-          </div>
-          <button className="close-btn" onClick={onClose}>
-            ✕
-          </button>
-        </div>
-
-        {parentComment && (
-          <div
-            style={{
-              marginBottom: "1rem",
-              padding: "0.75rem",
-              background: "var(--surface2)",
-              borderRadius: 10,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: "0.65rem",
-                alignItems: "flex-start",
-              }}
-            >
-              <Avatar
-                src={parentComment.user?.avatar}
-                name={parentComment.user?.display_name}
-                size={30}
-              />
-              <div>
-                <span style={{ fontWeight: 600, fontSize: "0.82rem" }}>
-                  {parentComment.user?.display_name}
-                </span>
-                <span
-                  style={{
-                    color: "var(--text3)",
-                    fontSize: "0.78rem",
-                    marginLeft: "0.4rem",
-                  }}
-                >
-                  @{parentComment.user?.username}
-                </span>
-                <div
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "var(--text2)",
-                    marginTop: "0.25rem",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {parentComment.content}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: "0.85rem" }}>
-          <Avatar src={myInfo?.avatar} name={myInfo?.display_name} size={36} />
-          <div style={{ flex: 1 }}>
-            <textarea
-              rows="3"
-              className="compose-textarea"
-              placeholder={
-                parentComment
-                  ? `Reply to @${parentComment.user?.username}…`
-                  : "Post your reply…"
-              }
-              style={{ width: "100%", fontSize: "0.95rem" }}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              autoFocus
-            />
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "0.65rem",
-              }}
-            >
-              <button
-                className="post-btn-sm"
-                onClick={submit}
-                disabled={!text.trim() || submitting}
-                style={{
-                  padding: "0.5rem 1.4rem",
-                  fontSize: "0.875rem",
-                  opacity: !text.trim() || submitting ? 0.5 : 1,
-                }}
-              >
-                {submitting ? "Replying…" : "Reply"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CommentCard({
-  comment,
-  token,
-  myInfo,
-  isAuthenticated,
-  postId,
-  isLast,
-}) {
-  const [liked, setLiked] = useState(comment.is_liked ?? false);
-  const [likeCount, setLikeCount] = useState(comment.counts?.likes ?? 0);
-  const [reposted, setReposted] = useState(comment.is_reposted ?? false);
-  const [repostCount, setRepostCount] = useState(comment.counts?.reposts ?? 0);
-  const [replyOpen, setReplyOpen] = useState(false);
-  const { likeComment, unlikeComment, repostComment, unrepostComment } =
-    usePostStore();
+function ReplyCard({ reply, token, myInfo, isAuthenticated, isLast }) {
+  const navigate = useNavigate();
+  const [liked, setLiked] = useState(reply.is_liked ?? false);
+  const [likeCount, setLikeCount] = useState(reply.counts?.likes ?? 0);
+  const [reposted, setReposted] = useState(reply.is_reposted ?? false);
+  const [repostCount, setRepostCount] = useState(reply.counts?.reposts ?? 0);
+  const { likePost, unlikePost, repostPost, unrepostPost } = usePostStore();
 
   const toggleLike = async (e) => {
     e.stopPropagation();
@@ -873,8 +752,8 @@ function CommentCard({
     const wasLiked = liked;
     setLiked(!wasLiked);
     setLikeCount((c) => (wasLiked ? Math.max(0, c - 1) : c + 1));
-    if (wasLiked) await unlikeComment(comment.id, token);
-    else await likeComment(comment.id, token);
+    if (wasLiked) await unlikePost(reply.id, token);
+    else await likePost(reply.id, token);
   };
 
   const toggleRepost = async (e) => {
@@ -883,8 +762,8 @@ function CommentCard({
     const wasReposted = reposted;
     setReposted(!wasReposted);
     setRepostCount((c) => (wasReposted ? Math.max(0, c - 1) : c + 1));
-    if (wasReposted) await unrepostComment(comment.id, token);
-    else await repostComment(comment.id, token);
+    if (wasReposted) await unrepostPost(reply.id, token);
+    else await repostPost(reply.id, token);
   };
 
   const btnBase = {
@@ -902,182 +781,193 @@ function CommentCard({
   };
 
   return (
-    <>
+    <div
+      style={{
+        display: "flex",
+        gap: "0.75rem",
+        padding: "1rem 1.25rem",
+        borderBottom: isLast ? "none" : "1px solid var(--border)",
+        animation: "fadeUp 0.25s ease both",
+        cursor: "pointer",
+      }}
+      onClick={() => navigate(`/${reply.user?.username}/post/${reply.id}`)}
+    >
       <div
         style={{
           display: "flex",
-          gap: "0.75rem",
-          padding: "1rem 1.25rem",
-          borderBottom: isLast ? "none" : "1px solid var(--border)",
-          animation: "fadeUp 0.25s ease both",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0,
+          flexShrink: 0,
         }}
       >
+        <Avatar
+          src={reply.user?.avatar}
+          name={reply.user?.display_name}
+          size={38}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/${reply.user?.username}`);
+          }}
+        />
+        {!isLast && (
+          <div
+            style={{
+              width: 1,
+              flex: 1,
+              background: "var(--border)",
+              marginTop: 4,
+              minHeight: 16,
+            }}
+          />
+        )}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            gap: 0,
-            flexShrink: 0,
+            gap: "0.4rem",
+            marginBottom: "0.3rem",
+            flexWrap: "wrap",
           }}
         >
-          <Avatar
-            src={comment.user?.avatar}
-            name={comment.user?.display_name}
-            size={38}
-          />
-          {!isLast && (
-            <div
+          <span
+            style={{
+              fontWeight: 600,
+              fontSize: "0.88rem",
+              color: "var(--text)",
+            }}
+          >
+            {reply.user?.display_name}
+          </span>
+          <span style={{ color: "var(--text3)", fontSize: "0.8rem" }}>
+            @{reply.user?.username}
+          </span>
+          <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>
+            · {timeAgo(reply.created_at)}
+          </span>
+        </div>
+
+        <div
+          style={{
+            fontSize: "0.9rem",
+            lineHeight: 1.6,
+            color: "var(--text)",
+            marginBottom: "0.6rem",
+          }}
+        >
+          {reply.content}
+        </div>
+
+        {reply.media && reply.media.length > 0 && (
+          <div style={{ marginBottom: "0.5rem" }}>
+            <img
+              src={reply.media[0].path}
+              alt=""
               style={{
-                width: 1,
-                flex: 1,
-                background: "var(--border)",
-                marginTop: 4,
-                minHeight: 16,
+                maxWidth: "100%",
+                borderRadius: 10,
+                maxHeight: 200,
+                objectFit: "cover",
               }}
             />
-          )}
-        </div>
+          </div>
+        )}
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.4rem",
-              marginBottom: "0.3rem",
-              flexWrap: "wrap",
+        <div
+          style={{ display: "flex", gap: "0.1rem" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            style={{ ...btnBase, color: liked ? "var(--red)" : "var(--text3)" }}
+            onClick={toggleLike}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill={liked ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            {likeCount > 0 && <span>{fmt(likeCount)}</span>}
+          </button>
+
+          <button
+            style={{ ...btnBase, color: "var(--text3)" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/${reply.user?.username}/post/${reply.id}`);
             }}
           >
-            <span
-              style={{
-                fontWeight: 600,
-                fontSize: "0.88rem",
-                color: "var(--text)",
-              }}
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
             >
-              {comment.user?.display_name}
-            </span>
-            <span style={{ color: "var(--text3)", fontSize: "0.8rem" }}>
-              @{comment.user?.username}
-            </span>
-            <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>
-              · {timeAgo(comment.created_at)}
-            </span>
-          </div>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            {(reply.counts?.replies ?? 0) > 0 && (
+              <span>{fmt(reply.counts.replies)}</span>
+            )}
+          </button>
 
-          <div
+          <button
             style={{
-              fontSize: "0.9rem",
-              lineHeight: 1.6,
-              color: "var(--text)",
-              marginBottom: "0.6rem",
+              ...btnBase,
+              color: reposted ? "var(--accent)" : "var(--text3)",
+              opacity: isAuthenticated ? 1 : 0.5,
             }}
+            onClick={toggleRepost}
           >
-            {comment.content}
-          </div>
-
-          <div style={{ display: "flex", gap: "0.1rem" }}>
-            <button
-              style={{
-                ...btnBase,
-                color: liked ? "var(--red)" : "var(--text3)",
-              }}
-              onClick={toggleLike}
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
             >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill={liked ? "currentColor" : "none"}
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-              {likeCount > 0 && <span>{fmt(likeCount)}</span>}
-            </button>
-
-            <button
-              style={{
-                ...btnBase,
-                color: "var(--text3)",
-                opacity: isAuthenticated ? 1 : 0.5,
-              }}
-              onClick={() => isAuthenticated && setReplyOpen(true)}
-            >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              Reply
-            </button>
-
-            <button
-              style={{
-                ...btnBase,
-                color: reposted ? "var(--accent)" : "var(--text3)",
-                opacity: isAuthenticated ? 1 : 0.5,
-              }}
-              onClick={toggleRepost}
-            >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <polyline points="17 1 21 5 17 9" />
-                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                <polyline points="7 23 3 19 7 15" />
-                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-              </svg>
-              {repostCount > 0 && <span>{fmt(repostCount)}</span>}
-            </button>
-          </div>
+              <polyline points="17 1 21 5 17 9" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <polyline points="7 23 3 19 7 15" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+            {repostCount > 0 && <span>{fmt(repostCount)}</span>}
+          </button>
         </div>
       </div>
-
-      {replyOpen && (
-        <ReplyModal
-          postId={postId}
-          parentComment={comment}
-          token={token}
-          myInfo={myInfo}
-          onClose={() => setReplyOpen(false)}
-        />
-      )}
-    </>
+    </div>
   );
 }
 
 const PostDetails = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { username, id } = useParams();
   const { token, isAuthenticated, me } = useAuthStore();
   const myInfo = me ?? null;
 
   const {
     currentPost,
-    comments,
+    parentPost,
+    replies,
     isLoadingPost,
-    isLoadingComments,
+    isLoadingReplies,
     postError,
     fetchPost,
-    fetchComments,
+    fetchReplies,
     likePost,
     unlikePost,
     repostPost,
     unrepostPost,
-    createComment,
+    createReply,
     clearPost,
   } = usePostStore();
 
@@ -1085,7 +975,7 @@ const PostDetails = () => {
   const [likeCount, setLikeCount] = useState(0);
   const [reposted, setReposted] = useState(false);
   const [repostCount, setRepostCount] = useState(0);
-  const [commentCount, setCommentCount] = useState(0);
+  const [replyCount, setReplyCount] = useState(0);
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
@@ -1094,7 +984,7 @@ const PostDetails = () => {
   useEffect(() => {
     if (id) {
       fetchPost(id, token);
-      fetchComments(id, token);
+      fetchReplies(id, token);
     }
     return () => clearPost();
   }, [id]);
@@ -1105,7 +995,7 @@ const PostDetails = () => {
       setLikeCount(currentPost.counts?.likes ?? 0);
       setReposted(currentPost.is_reposted ?? false);
       setRepostCount(currentPost.counts?.reposts ?? 0);
-      setCommentCount(currentPost.counts?.comments ?? 0);
+      setReplyCount(currentPost.counts?.replies ?? 0);
     }
   }, [currentPost]);
 
@@ -1146,10 +1036,10 @@ const PostDetails = () => {
       return;
     }
     setReplying(true);
-    const result = await createComment(currentPost.id, content, token);
+    const result = await createReply(currentPost.id, content, token);
     if (!result?.error) {
       if (!textOverride) setReplyText("");
-      setCommentCount((c) => c + 1);
+      setReplyCount((c) => c + 1);
     }
     setReplying(false);
     return result;
@@ -1189,10 +1079,8 @@ const PostDetails = () => {
   return (
     <>
       <style>{`
-        @keyframes skelPulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
+        @keyframes skelPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
       `}</style>
 
       {lightboxIndex !== null && post?.media?.length > 0 && (
@@ -1205,50 +1093,51 @@ const PostDetails = () => {
           myInfo={myInfo}
           isAuthenticated={isAuthenticated}
           postId={id}
-          comments={comments}
-          isLoadingComments={isLoadingComments}
-          onSendComment={async (text) => {
-            const result = await createComment(post.id, text, token);
-            if (!result?.error) setCommentCount((c) => c + 1);
-            return result;
-          }}
+          replies={replies}
+          isLoadingReplies={isLoadingReplies}
+          onSendReply={sendReply}
         />
       )}
 
       <div
         style={{
-          position: "sticky",
-          top: 0,
-          background: "rgba(12,12,14,0.88)",
-          backdropFilter: "blur(14px)",
-          borderBottom: "1px solid var(--border)",
-          padding: "0.9rem 1.25rem",
-          zIndex: 20,
           display: "flex",
           alignItems: "center",
-          gap: "0.9rem",
+          gap: "0.75rem",
+          padding: "0.85rem 1.25rem",
+          borderBottom: "1px solid var(--border)",
         }}
       >
-        <button className="back-btn" onClick={() => navigate(-1)}>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--text)",
+            padding: "0.3rem",
+            borderRadius: 7,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
           <svg
-            width="15"
-            height="15"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="2.2"
           >
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <div className="serif" style={{ fontSize: "1.1rem" }}>
-          Post
-        </div>
+        <span style={{ fontWeight: 700, fontSize: "1rem" }}>Post</span>
       </div>
 
       {isLoadingPost ? (
         <PostSkeleton />
-      ) : postError && !post ? (
+      ) : postError ? (
         <div
           style={{
             padding: "3rem 1.5rem",
@@ -1256,230 +1145,259 @@ const PostDetails = () => {
             color: "var(--text3)",
           }}
         >
-          <p>{postError}</p>
-          <button
-            className="edit-btn"
-            style={{ marginTop: "1rem" }}
-            onClick={() => navigate(-1)}
-          >
-            Go back
-          </button>
+          {postError}
         </div>
       ) : post ? (
-        <div
-          style={{
-            padding: "1.4rem 1.25rem 0",
-            borderBottom: "1px solid var(--border)",
-            animation: "fadeUp 0.3s ease both",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-              marginBottom: "1rem",
-            }}
-          >
+        <div style={{ borderBottom: "1px solid var(--border)" }}>
+          {parentPost && (
             <div
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate(`/${post.user?.username}`)}
+              style={{
+                padding: "0.9rem 1.25rem",
+                borderBottom: "1px solid var(--border)",
+                display: "flex",
+                gap: "0.75rem",
+                cursor: "pointer",
+                opacity: 0.75,
+              }}
+              onClick={() =>
+                navigate(`/${parentPost.user?.username}/post/${parentPost.id}`)
+              }
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <Avatar
+                  src={parentPost.user?.avatar}
+                  name={parentPost.user?.display_name}
+                  size={34}
+                />
+                <div
+                  style={{
+                    width: 1,
+                    flex: 1,
+                    background: "var(--border)",
+                    marginTop: 4,
+                    minHeight: 20,
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1, minWidth: 0, paddingBottom: "0.5rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.4rem",
+                    alignItems: "center",
+                    marginBottom: "0.25rem",
+                  }}
+                >
+                  <span style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                    {parentPost.user?.display_name}
+                  </span>
+                  <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>
+                    @{parentPost.user?.username}
+                  </span>
+                  <span style={{ color: "var(--text3)", fontSize: "0.75rem" }}>
+                    · {timeAgo(parentPost.created_at)}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.88rem",
+                    color: "var(--text2)",
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {parentPost.content}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div style={{ padding: "1.4rem 1.25rem 0" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "0.85rem",
+                marginBottom: "1rem",
+              }}
             >
               <Avatar
                 src={post.user?.avatar}
                 name={post.user?.display_name}
                 size={44}
-              />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontSize: "0.95rem",
-                  cursor: "pointer",
-                }}
                 onClick={() => navigate(`/${post.user?.username}`)}
-              >
-                {post.user?.display_name}
-              </div>
-              <div
-                style={{
-                  color: "var(--text3)",
-                  fontSize: "0.82rem",
-                  marginTop: "0.08rem",
-                }}
-              >
-                @{post.user?.username}
+              />
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {post.user?.display_name}
+                </div>
+                <div style={{ color: "var(--text3)", fontSize: "0.82rem" }}>
+                  @{post.user?.username}
+                </div>
               </div>
             </div>
-            {isAuthenticated && me?.username !== post.user?.username && (
+
+            <div
+              style={{
+                fontSize: "1.15rem",
+                lineHeight: 1.65,
+                color: "var(--text)",
+                whiteSpace: "pre-line",
+                marginBottom: "1rem",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {post.content}
+            </div>
+
+            {post.media && post.media.length > 0 && (
+              <MediaGrid
+                media={post.media}
+                onOpenLightbox={(index) => setLightboxIndex(index)}
+              />
+            )}
+
+            <div
+              style={{
+                fontSize: "0.82rem",
+                color: "var(--text3)",
+                padding: "0.85rem 0",
+                borderTop: "1px solid var(--border)",
+                borderBottom: "1px solid var(--border)",
+                marginBottom: "0.1rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              {fullDate}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "1.5rem",
+                padding: "0.9rem 0",
+                borderBottom: "1px solid var(--border)",
+              }}
+            >
+              <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
+                <strong style={{ color: "var(--text)", fontWeight: 700 }}>
+                  {fmt(repostCount)}
+                </strong>{" "}
+                Reposts
+              </div>
+              <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
+                <strong style={{ color: "var(--text)", fontWeight: 700 }}>
+                  {fmt(likeCount)}
+                </strong>{" "}
+                Likes
+              </div>
+              <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
+                <strong style={{ color: "var(--text)", fontWeight: 700 }}>
+                  {fmt(replyCount)}
+                </strong>{" "}
+                Replies
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-around",
+                padding: "0.3rem 0 0.5rem",
+                borderBottom: "1px solid var(--border)",
+              }}
+            >
+              <button style={actBtnStyle()} onClick={focusReply}>
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Reply
+              </button>
+              <button style={actBtnStyle(reposted)} onClick={toggleRepost}>
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
+                  <polyline points="17 1 21 5 17 9" />
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                  <polyline points="7 23 3 19 7 15" />
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                </svg>
+                {reposted ? "Reposted" : "Repost"}
+              </button>
               <button
                 style={{
-                  background: "var(--accent)",
-                  color: "var(--accent-text)",
-                  border: "none",
-                  borderRadius: 9,
-                  padding: "0.42rem 1.1rem",
-                  fontFamily: "'Instrument Sans', sans-serif",
-                  fontSize: "0.8rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
+                  ...actBtnStyle(liked),
+                  color: liked ? "var(--red)" : "var(--text3)",
                 }}
+                onClick={toggleLike}
               >
-                Follow
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill={liked ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                {liked ? "Liked" : "Like"}
               </button>
-            )}
-          </div>
-
-          <div
-            style={{
-              fontSize: "1.15rem",
-              lineHeight: 1.65,
-              color: "var(--text)",
-              whiteSpace: "pre-line",
-              marginBottom: "1rem",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {post.content}
-          </div>
-
-          {post.media && post.media.length > 0 && (
-            <MediaGrid
-              media={post.media}
-              onOpenLightbox={(index) => setLightboxIndex(index)}
-            />
-          )}
-
-          <div
-            style={{
-              fontSize: "0.82rem",
-              color: "var(--text3)",
-              padding: "0.85rem 0",
-              borderTop: "1px solid var(--border)",
-              borderBottom: "1px solid var(--border)",
-              marginBottom: "0.1rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-            }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            {fullDate}
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              gap: "1.5rem",
-              padding: "0.9rem 0",
-              borderBottom: "1px solid var(--border)",
-            }}
-          >
-            <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
-              <strong style={{ color: "var(--text)", fontWeight: 700 }}>
-                {fmt(repostCount)}
-              </strong>{" "}
-              Reposts
+              <button style={actBtnStyle()} onClick={copyLink}>
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
+                Share
+              </button>
             </div>
-            <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
-              <strong style={{ color: "var(--text)", fontWeight: 700 }}>
-                {fmt(likeCount)}
-              </strong>{" "}
-              Likes
-            </div>
-            <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
-              <strong style={{ color: "var(--text)", fontWeight: 700 }}>
-                {fmt(commentCount)}
-              </strong>{" "}
-              Replies
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-around",
-              padding: "0.3rem 0 0.5rem",
-              borderBottom: "1px solid var(--border)",
-            }}
-          >
-            <button style={actBtnStyle()} onClick={focusReply}>
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              Reply
-            </button>
-            <button style={actBtnStyle(reposted)} onClick={toggleRepost}>
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <polyline points="17 1 21 5 17 9" />
-                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                <polyline points="7 23 3 19 7 15" />
-                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-              </svg>
-              {reposted ? "Reposted" : "Repost"}
-            </button>
-            <button
-              style={{
-                ...actBtnStyle(liked),
-                color: liked ? "var(--red)" : "var(--text3)",
-              }}
-              onClick={toggleLike}
-            >
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill={liked ? "currentColor" : "none"}
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-              {liked ? "Liked" : "Like"}
-            </button>
-            <button style={actBtnStyle()} onClick={copyLink}>
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <circle cx="18" cy="5" r="3" />
-                <circle cx="6" cy="12" r="3" />
-                <circle cx="18" cy="19" r="3" />
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-              </svg>
-              Share
-            </button>
           </div>
         </div>
       ) : null}
@@ -1573,14 +1491,14 @@ const PostDetails = () => {
           textTransform: "uppercase",
         }}
       >
-        {isLoadingComments
+        {isLoadingReplies
           ? "Loading…"
-          : `${comments.length} ${comments.length === 1 ? "Reply" : "Replies"}`}
+          : `${replies.length} ${replies.length === 1 ? "Reply" : "Replies"}`}
       </div>
 
-      {isLoadingComments ? (
-        [1, 2, 3].map((k) => <CommentSkeleton key={k} />)
-      ) : comments.length === 0 ? (
+      {isLoadingReplies ? (
+        [1, 2, 3].map((k) => <ReplySkeleton key={k} />)
+      ) : replies.length === 0 ? (
         <div
           style={{
             padding: "2.5rem 1.5rem",
@@ -1592,15 +1510,14 @@ const PostDetails = () => {
           No replies yet. Be the first!
         </div>
       ) : (
-        comments.map((comment, i) => (
-          <CommentCard
-            key={comment.id}
-            comment={comment}
+        replies.map((reply, i) => (
+          <ReplyCard
+            key={reply.id}
+            reply={reply}
             token={token}
             myInfo={myInfo}
             isAuthenticated={isAuthenticated}
-            postId={id}
-            isLast={i === comments.length - 1}
+            isLast={i === replies.length - 1}
           />
         ))
       )}

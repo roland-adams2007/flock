@@ -21,8 +21,8 @@ function App() {
 
         <Route element={<Layout />}>
           <Route path="/" element={<Homepage />} />
-          <Route path="/follows" element={<Follows />} />
-          <Route path="/post/:id" element={<PostDetails />} />
+          <Route path="/:username/follows" element={<Follows />} />
+          <Route path="/:username/post/:id" element={<PostDetails />} />
           <Route path="/:username" element={<Profile />} />
         </Route>
       </Routes>

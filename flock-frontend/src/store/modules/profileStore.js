@@ -63,16 +63,30 @@ export const useProfileStore = create(
 
       fetchPosts: async (username, token, page = 1, force = false) => {
         const profile = get().profiles[username];
-        if (!force && profile?.posts) return;
+        if (!force && page === 1 && profile?.posts) return;
+        const isFirstPage = page === 1;
         set({ isLoadingPosts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const { data } = await axios.get(`${API_BASE}/profile/posts`, { params: { username, page }, headers });
           if (data.success) {
-            set((state) => ({
-              profiles: { ...state.profiles, [username]: { ...state.profiles[username], posts: data.posts } },
-              isLoadingPosts: false,
-            }));
+            set((state) => {
+              const existing = state.profiles[username];
+              const prevData = !isFirstPage && existing?.posts?.data ? existing.posts.data : [];
+              return {
+                profiles: {
+                  ...state.profiles,
+                  [username]: {
+                    ...existing,
+                    posts: {
+                      ...data.posts,
+                      data: [...prevData, ...data.posts.data],
+                    },
+                  },
+                },
+                isLoadingPosts: false,
+              };
+            });
           }
         } catch (err) {
           set({ error: err.response?.data?.message || "Failed to load posts", isLoadingPosts: false });
@@ -81,16 +95,30 @@ export const useProfileStore = create(
 
       fetchReplies: async (username, token, page = 1, force = false) => {
         const profile = get().profiles[username];
-        if (!force && profile?.replies) return;
+        if (!force && page === 1 && profile?.replies) return;
+        const isFirstPage = page === 1;
         set({ isLoadingReplies: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const { data } = await axios.get(`${API_BASE}/profile/replies`, { params: { username, page }, headers });
           if (data.success) {
-            set((state) => ({
-              profiles: { ...state.profiles, [username]: { ...state.profiles[username], replies: data.replies } },
-              isLoadingReplies: false,
-            }));
+            set((state) => {
+              const existing = state.profiles[username];
+              const prevData = !isFirstPage && existing?.replies?.data ? existing.replies.data : [];
+              return {
+                profiles: {
+                  ...state.profiles,
+                  [username]: {
+                    ...existing,
+                    replies: {
+                      ...data.replies,
+                      data: [...prevData, ...data.replies.data],
+                    },
+                  },
+                },
+                isLoadingReplies: false,
+              };
+            });
           }
         } catch (err) {
           set({ error: err.response?.data?.message || "Failed to load replies", isLoadingReplies: false });
@@ -99,16 +127,30 @@ export const useProfileStore = create(
 
       fetchLikedPosts: async (username, token, page = 1, force = false) => {
         const profile = get().profiles[username];
-        if (!force && profile?.likedPosts) return;
+        if (!force && page === 1 && profile?.likedPosts) return;
+        const isFirstPage = page === 1;
         set({ isLoadingLikedPosts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const { data } = await axios.get(`${API_BASE}/profile/likes/posts`, { params: { username, page }, headers });
           if (data.success) {
-            set((state) => ({
-              profiles: { ...state.profiles, [username]: { ...state.profiles[username], likedPosts: data.liked_posts } },
-              isLoadingLikedPosts: false,
-            }));
+            set((state) => {
+              const existing = state.profiles[username];
+              const prevData = !isFirstPage && existing?.likedPosts?.data ? existing.likedPosts.data : [];
+              return {
+                profiles: {
+                  ...state.profiles,
+                  [username]: {
+                    ...existing,
+                    likedPosts: {
+                      ...data.liked_posts,
+                      data: [...prevData, ...data.liked_posts.data],
+                    },
+                  },
+                },
+                isLoadingLikedPosts: false,
+              };
+            });
           }
         } catch (err) {
           set({ error: err.response?.data?.message || "Failed to load liked posts", isLoadingLikedPosts: false });
@@ -117,16 +159,30 @@ export const useProfileStore = create(
 
       fetchReposts: async (username, token, page = 1, force = false) => {
         const profile = get().profiles[username];
-        if (!force && profile?.reposts) return;
+        if (!force && page === 1 && profile?.reposts) return;
+        const isFirstPage = page === 1;
         set({ isLoadingReposts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const { data } = await axios.get(`${API_BASE}/profile/reposts`, { params: { username, page }, headers });
           if (data.success) {
-            set((state) => ({
-              profiles: { ...state.profiles, [username]: { ...state.profiles[username], reposts: data.reposted_posts } },
-              isLoadingReposts: false,
-            }));
+            set((state) => {
+              const existing = state.profiles[username];
+              const prevData = !isFirstPage && existing?.reposts?.data ? existing.reposts.data : [];
+              return {
+                profiles: {
+                  ...state.profiles,
+                  [username]: {
+                    ...existing,
+                    reposts: {
+                      ...data.reposted_posts,
+                      data: [...prevData, ...data.reposted_posts.data],
+                    },
+                  },
+                },
+                isLoadingReposts: false,
+              };
+            });
           }
         } catch (err) {
           set({ error: err.response?.data?.message || "Failed to load reposts", isLoadingReposts: false });

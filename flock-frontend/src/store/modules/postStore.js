@@ -8,9 +8,10 @@ export const usePostStore = create(
   devtools(
     (set, get) => ({
       currentPost: null,
-      comments: [],
+      parentPost: null,
+      replies: [],
       isLoadingPost: false,
-      isLoadingComments: false,
+      isLoadingReplies: false,
       postError: null,
       error: null,
 
@@ -19,7 +20,8 @@ export const usePostStore = create(
           isLoadingPost: true,
           postError: null,
           currentPost: null,
-          comments: [],
+          parentPost: null,
+          replies: [],
         });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -27,7 +29,11 @@ export const usePostStore = create(
             headers,
           });
           if (data.success) {
-            set({ currentPost: data.post, isLoadingPost: false });
+            set({
+              currentPost: data.post,
+              parentPost: data.parent ?? null,
+              isLoadingPost: false,
+            });
           } else {
             set({
               postError: data.message || "Failed to load post",
@@ -42,19 +48,19 @@ export const usePostStore = create(
         }
       },
 
-      fetchComments: async (postId, token) => {
-        set({ isLoadingComments: true });
+      fetchReplies: async (postId, token) => {
+        set({ isLoadingReplies: true });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const { data } = await axios.get(
-            `${API_BASE}/posts/${postId}/comments`,
+            `${API_BASE}/posts/${postId}/replies`,
             { headers },
           );
           if (data.success) {
-            set({ comments: data.comments, isLoadingComments: false });
+            set({ replies: data.comments, isLoadingReplies: false });
           }
         } catch (err) {
-          set({ isLoadingComments: false });
+          set({ isLoadingReplies: false });
         }
       },
 
@@ -105,7 +111,9 @@ export const usePostStore = create(
           await axios.post(
             `${API_BASE}/posts/${postId}/like`,
             {},
-            { headers: { Authorization: `Bearer ${token}` } },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
           );
         } catch (err) {
           set({ error: err.response?.data?.message || "Failed to like post" });
@@ -129,7 +137,9 @@ export const usePostStore = create(
           const { data } = await axios.post(
             `${API_BASE}/posts/${postId}/repost`,
             {},
-            { headers: { Authorization: `Bearer ${token}` } },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
           );
           return data;
         } catch (err) {
@@ -150,99 +160,25 @@ export const usePostStore = create(
         }
       },
 
-      createComment: async (postId, content, token) => {
+      createReply: async (parentPostId, content, token) => {
         try {
           const { data } = await axios.post(
-            `${API_BASE}/posts/${postId}/comments`,
+            `${API_BASE}/posts/${parentPostId}/replies`,
             { content },
             { headers: { Authorization: `Bearer ${token}` } },
           );
           if (data.success) {
             set((state) => ({
-              comments: [data.comment, ...state.comments],
+              replies: [data.comment, ...state.replies],
               currentPost: state.currentPost
                 ? {
                     ...state.currentPost,
                     counts: {
                       ...state.currentPost.counts,
-                      comments: (state.currentPost.counts?.comments ?? 0) + 1,
+                      replies: (state.currentPost.counts?.replies ?? 0) + 1,
                     },
                   }
                 : null,
-            }));
-          }
-          return data;
-        } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to comment" });
-          return { error: true };
-        }
-      },
-
-      likeComment: async (commentId, token) => {
-        try {
-          await axios.post(
-            `${API_BASE}/comments/${commentId}/like`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
-        } catch (err) {
-          set({
-            error: err.response?.data?.message || "Failed to like comment",
-          });
-        }
-      },
-
-      unlikeComment: async (commentId, token) => {
-        try {
-          await axios.delete(`${API_BASE}/comments/${commentId}/like`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        } catch (err) {
-          set({
-            error: err.response?.data?.message || "Failed to unlike comment",
-          });
-        }
-      },
-
-      repostComment: async (commentId, token) => {
-        try {
-          const { data } = await axios.post(
-            `${API_BASE}/comments/${commentId}/repost`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
-          return data;
-        } catch (err) {
-          set({
-            error: err.response?.data?.message || "Failed to repost comment",
-          });
-          return { error: true };
-        }
-      },
-
-      unrepostComment: async (commentId, token) => {
-        try {
-          await axios.delete(`${API_BASE}/comments/${commentId}/repost`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        } catch (err) {
-          set({
-            error:
-              err.response?.data?.message || "Failed to undo repost comment",
-          });
-        }
-      },
-
-      replyToComment: async (postId, content, token, parentCommentId) => {
-        try {
-          const { data } = await axios.post(
-            `${API_BASE}/posts/${postId}/comments`,
-            { content, parent_comment_id: parentCommentId },
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
-          if (data.success) {
-            set((state) => ({
-              comments: [data.comment, ...state.comments],
             }));
           }
           return data;
@@ -280,16 +216,22 @@ export const usePostStore = create(
         }
       },
 
-      updateLocalComment: (commentId, changes) => {
+      updateLocalReply: (replyId, changes) => {
         set((state) => ({
-          comments: state.comments.map((c) =>
-            c.id === commentId ? { ...c, ...changes } : c,
+          replies: state.replies.map((r) =>
+            r.id === replyId ? { ...r, ...changes } : r,
           ),
         }));
       },
 
       clearPost: () =>
-        set({ currentPost: null, comments: [], postError: null, error: null }),
+        set({
+          currentPost: null,
+          parentPost: null,
+          replies: [],
+          postError: null,
+          error: null,
+        }),
     }),
     { name: "PostStore" },
   ),

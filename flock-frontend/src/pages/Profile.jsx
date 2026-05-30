@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuthStore, useProfileStore, usePostStore } from "../store/store";
 
@@ -20,18 +20,20 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-function Avatar({ src, name, size = 38 }) {
+function Avatar({ src, name, size = 38, onClick }) {
   if (src) {
     return (
       <img
         src={src}
         alt={name}
+        onClick={onClick}
         style={{
           width: size,
           height: size,
           borderRadius: "50%",
           objectFit: "cover",
           flexShrink: 0,
+          cursor: onClick ? "pointer" : "default",
         }}
       />
     );
@@ -39,9 +41,94 @@ function Avatar({ src, name, size = 38 }) {
   return (
     <div
       className="avatar"
-      style={{ width: size, height: size, flexShrink: 0 }}
+      style={{
+        width: size,
+        height: size,
+        flexShrink: 0,
+        cursor: onClick ? "pointer" : "default",
+      }}
+      onClick={onClick}
     >
       {getInitials(name)}
+    </div>
+  );
+}
+
+function AvatarLightbox({ src, name, onClose }) {
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.85)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <button
+        onClick={onClose}
+        style={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          background: "rgba(0,0,0,0.5)",
+          border: "none",
+          borderRadius: "50%",
+          width: 36,
+          height: 36,
+          color: "#fff",
+          fontSize: "1rem",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        ✕
+      </button>
+      {src ? (
+        <img
+          src={src}
+          alt={name}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: "90vw",
+            maxHeight: "90vh",
+            borderRadius: 12,
+            objectFit: "contain",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+          }}
+        />
+      ) : (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: 200,
+            height: 200,
+            borderRadius: "50%",
+            background: "var(--surface2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "4rem",
+            fontWeight: 700,
+            color: "var(--text2)",
+          }}
+        >
+          {getInitials(name)}
+        </div>
+      )}
     </div>
   );
 }
@@ -102,6 +189,30 @@ function EmptyState({ label }) {
       }}
     >
       No {label} yet
+    </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        padding: "1.5rem",
+      }}
+    >
+      <div
+        style={{
+          width: 22,
+          height: 22,
+          border: "2.5px solid var(--border2)",
+          borderTopColor: "var(--accent)",
+          borderRadius: "50%",
+          animation: "spin 0.7s linear infinite",
+        }}
+      />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -305,13 +416,11 @@ function PostCard({
   };
 
   const handleCardClick = () => {
-    navigate(`/post/${post.id}`);
+    navigate(`/${post.user?.username}/post/${post.id}`);
   };
 
   const user = post.user;
 
-  // Determine if this card is being shown as a repost.
-  // Backend sets is_repost: true when it's fetched as part of a repost feed.
   const showRepostBanner = post.is_repost === true && repostedByUsername;
 
   return (
@@ -325,7 +434,6 @@ function PostCard({
         }}
         onClick={handleCardClick}
       >
-        {/* ── Repost banner ── */}
         {showRepostBanner && (
           <div
             style={{
@@ -1017,11 +1125,23 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [localPosts, setLocalPosts] = useState(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const [postsPage, setPostsPage] = useState(1);
+  const [repliesPage, setRepliesPage] = useState(1);
+  const [likesPage, setLikesPage] = useState(1);
+  const [repostsPage, setRepostsPage] = useState(1);
+
   const avatarInputRef = useRef(null);
 
   const profileData = profiles[username] ?? null;
   const info = profileData?.info ?? null;
   const isMine = profileData?.mine ?? false;
+
+  const postsLastPage = profileData?.posts?.last_page ?? 1;
+  const repliesLastPage = profileData?.replies?.last_page ?? 1;
+  const likesLastPage = profileData?.likedPosts?.last_page ?? 1;
+  const repostsLastPage = profileData?.reposts?.last_page ?? 1;
 
   useEffect(() => {
     if (username) fetchProfile(username, token);
@@ -1041,28 +1161,80 @@ const Profile = () => {
 
   useEffect(() => {
     if (!username || !profileData) return;
-    if (activeTab === "posts" && !profileData.posts)
-      fetchPosts(username, token);
-    if (activeTab === "replies" && !profileData.replies)
-      fetchReplies(username, token);
-    if (activeTab === "likes" && !profileData.likedPosts)
-      fetchLikedPosts(username, token);
-    if (activeTab === "reposts" && !profileData.reposts)
-      fetchReposts(username, token);
-    if (activeTab === "followers") navigate(`/follows?t=followers`);
-    if (activeTab === "following") navigate(`/follows?t=following`);
+    if (activeTab === "posts" && !profileData.posts) {
+      setPostsPage(1);
+      fetchPosts(username, token, 1);
+    }
+    if (activeTab === "replies" && !profileData.replies) {
+      setRepliesPage(1);
+      fetchReplies(username, token, 1);
+    }
+    if (activeTab === "likes" && !profileData.likedPosts) {
+      setLikesPage(1);
+      fetchLikedPosts(username, token, 1);
+    }
+    if (activeTab === "reposts" && !profileData.reposts) {
+      setRepostsPage(1);
+      fetchReposts(username, token, 1);
+    }
+    if (activeTab === "followers") navigate(`/${username}/follows?t=followers`);
+    if (activeTab === "following") navigate(`/${username}/follows?t=following`);
   }, [activeTab, profileData]);
 
   useEffect(() => {
     if (profileData?.posts?.data) {
-      const data = profileData.posts.data;
-      const repostedIds = new Set(
-        data.filter((p) => p.is_repost).map((p) => p.id),
-      );
-      // Store originals, but exclude any that also appear as a repost (avoid duplicates)
-      setLocalPosts(data.filter((p) => !p.is_repost && !repostedIds.has(p.id)));
+      setLocalPosts(profileData.posts.data.filter((p) => !p.is_repost));
     }
   }, [profileData?.posts]);
+
+  const loadMorePosts = useCallback(() => {
+    if (isLoadingPosts || postsPage >= postsLastPage) return;
+    const next = postsPage + 1;
+    setPostsPage(next);
+    fetchPosts(username, token, next);
+  }, [isLoadingPosts, postsPage, postsLastPage, username, token]);
+
+  const loadMoreReplies = useCallback(() => {
+    if (isLoadingReplies || repliesPage >= repliesLastPage) return;
+    const next = repliesPage + 1;
+    setRepliesPage(next);
+    fetchReplies(username, token, next);
+  }, [isLoadingReplies, repliesPage, repliesLastPage, username, token]);
+
+  const loadMoreLikes = useCallback(() => {
+    if (isLoadingLikedPosts || likesPage >= likesLastPage) return;
+    const next = likesPage + 1;
+    setLikesPage(next);
+    fetchLikedPosts(username, token, next);
+  }, [isLoadingLikedPosts, likesPage, likesLastPage, username, token]);
+
+  const loadMoreReposts = useCallback(() => {
+    if (isLoadingReposts || repostsPage >= repostsLastPage) return;
+    const next = repostsPage + 1;
+    setRepostsPage(next);
+    fetchReposts(username, token, next);
+  }, [isLoadingReposts, repostsPage, repostsLastPage, username, token]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolledToBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 300;
+      if (!scrolledToBottom) return;
+      if (activeTab === "posts") loadMorePosts();
+      else if (activeTab === "replies") loadMoreReplies();
+      else if (activeTab === "likes") loadMoreLikes();
+      else if (activeTab === "reposts") loadMoreReposts();
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [
+    activeTab,
+    loadMorePosts,
+    loadMoreReplies,
+    loadMoreLikes,
+    loadMoreReposts,
+  ]);
 
   const handleFollow = () => {
     if (!isAuthenticated) {
@@ -1112,21 +1284,13 @@ const Profile = () => {
   };
 
   const handleNewPost = () => {
+    setPostsPage(1);
     fetchPosts(username, token, 1, true);
   };
 
-  // Merge local originals with reposts from store, sorted newest first.
-  // A post that was reposted appears in the API twice (is_repost:true and
-  // is_repost:false). We keep only the repost copy (shows the banner) and drop
-  // the plain copy so it doesn't show twice. The repost copy's created_at already
-  // reflects reposted_at from the backend, so a simple date sort is correct.
-  const storeReposts = (profileData?.posts?.data ?? []).filter(
-    (p) => p.is_repost,
-  );
-  const repostedIds = new Set(storeReposts.map((p) => p.id));
-  const rawOriginals =
-    localPosts ?? (profileData?.posts?.data ?? []).filter((p) => !p.is_repost);
-  const originals = rawOriginals.filter((p) => !repostedIds.has(p.id));
+  const allPostsData = profileData?.posts?.data ?? [];
+  const storeReposts = allPostsData.filter((p) => p.is_repost);
+  const originals = localPosts ?? allPostsData.filter((p) => !p.is_repost);
   const posts = [...originals, ...storeReposts].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at),
   );
@@ -1147,37 +1311,46 @@ const Profile = () => {
       if (isLoadingPosts && !posts.length)
         return [1, 2, 3].map((k) => <SkeletonPost key={k} />);
       if (!posts.length) return <EmptyState label="posts" />;
-      return posts.map((p) => (
-        <PostCard
-          // use `post-{id}` for originals, `repost-{id}` for reposts to avoid duplicate keys
-          key={p.is_repost ? `repost-${p.id}` : `post-${p.id}`}
-          post={p}
-          isReply={false}
-          token={token}
-          myInfo={myInfo}
-          myUsername={myUsername}
-          onDeleted={handlePostDeleted}
-          onEdited={handlePostEdited}
-          repostedByUsername={p.is_repost ? username : null}
-        />
-      ));
+      return (
+        <>
+          {posts.map((p) => (
+            <PostCard
+              key={p.is_repost ? `repost-${p.id}` : `post-${p.id}`}
+              post={p}
+              isReply={false}
+              token={token}
+              myInfo={myInfo}
+              myUsername={myUsername}
+              onDeleted={handlePostDeleted}
+              onEdited={handlePostEdited}
+              repostedByUsername={p.is_repost ? username : null}
+            />
+          ))}
+          {isLoadingPosts && posts.length > 0 && <LoadingSpinner />}
+        </>
+      );
     }
     if (activeTab === "replies") {
-      if (isLoadingReplies)
+      if (isLoadingReplies && !replies.length)
         return [1, 2, 3].map((k) => <SkeletonPost key={k} />);
       if (!replies.length) return <EmptyState label="replies" />;
-      return replies.map((p) => (
-        <PostCard
-          key={p.id}
-          post={p}
-          isReply={true}
-          token={token}
-          myInfo={myInfo}
-          myUsername={myUsername}
-          onDeleted={handlePostDeleted}
-          onEdited={handlePostEdited}
-        />
-      ));
+      return (
+        <>
+          {replies.map((p) => (
+            <PostCard
+              key={p.id}
+              post={p}
+              isReply={true}
+              token={token}
+              myInfo={myInfo}
+              myUsername={myUsername}
+              onDeleted={handlePostDeleted}
+              onEdited={handlePostEdited}
+            />
+          ))}
+          {isLoadingReplies && replies.length > 0 && <LoadingSpinner />}
+        </>
+      );
     }
     if (activeTab === "media") {
       if (isLoadingPosts && !mediaPosts.length)
@@ -1191,7 +1364,7 @@ const Profile = () => {
                 <div
                   key={m.id}
                   className="media-cell"
-                  onClick={() => navigate(`/post/${p.id}`)}
+                  onClick={() => navigate(`/${p.user?.username}/post/${p.id}`)}
                 >
                   <video
                     src={m.path}
@@ -1212,7 +1385,7 @@ const Profile = () => {
                     backgroundPosition: "center",
                     cursor: "pointer",
                   }}
-                  onClick={() => navigate(`/post/${p.id}`)}
+                  onClick={() => navigate(`/${p.user?.username}/post/${p.id}`)}
                 />
               ),
             ),
@@ -1221,39 +1394,49 @@ const Profile = () => {
       );
     }
     if (activeTab === "likes") {
-      if (isLoadingLikedPosts)
+      if (isLoadingLikedPosts && !likedPosts.length)
         return [1, 2, 3].map((k) => <SkeletonPost key={k} />);
       if (!likedPosts.length) return <EmptyState label="liked posts" />;
-      return likedPosts.map((p) => (
-        <PostCard
-          key={p.id}
-          post={p}
-          isReply={false}
-          token={token}
-          myInfo={myInfo}
-          myUsername={myUsername}
-          onDeleted={handlePostDeleted}
-          onEdited={handlePostEdited}
-        />
-      ));
+      return (
+        <>
+          {likedPosts.map((p) => (
+            <PostCard
+              key={p.id}
+              post={p}
+              isReply={false}
+              token={token}
+              myInfo={myInfo}
+              myUsername={myUsername}
+              onDeleted={handlePostDeleted}
+              onEdited={handlePostEdited}
+            />
+          ))}
+          {isLoadingLikedPosts && likedPosts.length > 0 && <LoadingSpinner />}
+        </>
+      );
     }
     if (activeTab === "reposts") {
-      if (isLoadingReposts)
+      if (isLoadingReposts && !reposts.length)
         return [1, 2, 3].map((k) => <SkeletonPost key={k} />);
       if (!reposts.length) return <EmptyState label="reposts" />;
-      return reposts.map((p) => (
-        <PostCard
-          key={`repost-${p.id}`}
-          post={{ ...p, is_repost: true }}
-          isReply={false}
-          token={token}
-          myInfo={myInfo}
-          myUsername={myUsername}
-          onDeleted={handlePostDeleted}
-          onEdited={handlePostEdited}
-          repostedByUsername={username}
-        />
-      ));
+      return (
+        <>
+          {reposts.map((p) => (
+            <PostCard
+              key={`repost-${p.repost_id ?? p.post?.id ?? p.id}`}
+              post={{ ...(p.post ?? p), is_repost: true }}
+              isReply={false}
+              token={token}
+              myInfo={myInfo}
+              myUsername={myUsername}
+              onDeleted={handlePostDeleted}
+              onEdited={handlePostEdited}
+              repostedByUsername={p.reposted_by?.username ?? username}
+            />
+          ))}
+          {isLoadingReposts && reposts.length > 0 && <LoadingSpinner />}
+        </>
+      );
     }
   };
 
@@ -1282,6 +1465,14 @@ const Profile = () => {
 
   return (
     <>
+      {lightboxOpen && (
+        <AvatarLightbox
+          src={info?.avatar}
+          name={info?.display_name}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
+
       <div className="profile-header-bar">
         <button className="back-btn" onClick={() => navigate("/")}>
           <svg
@@ -1349,7 +1540,11 @@ const Profile = () => {
         </div>
 
         <div className="profile-avatar-wrap">
-          <div className="profile-avatar">
+          <div
+            className="profile-avatar"
+            onClick={() => setLightboxOpen(true)}
+            style={{ cursor: "pointer" }}
+          >
             {info?.avatar ? (
               <img
                 src={info.avatar}
@@ -1475,7 +1670,7 @@ const Profile = () => {
           <div
             className="stat-item"
             style={{ cursor: "pointer" }}
-            onClick={() => navigate(`/follows?t=following`)}
+            onClick={() => navigate(`/${username}/follows?t=following`)}
           >
             <span className="stat-num">
               {fmt(profileData?.following_count ?? 0)}
@@ -1485,7 +1680,7 @@ const Profile = () => {
           <div
             className="stat-item"
             style={{ cursor: "pointer" }}
-            onClick={() => navigate(`/follows?t=followers`)}
+            onClick={() => navigate(`/${username}/follows?t=followers`)}
           >
             <span className="stat-num">
               {fmt(profileData?.followers_count ?? 0)}

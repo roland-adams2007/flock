@@ -13,31 +13,23 @@ Route::get('/auth/me', [ProfileController::class, 'me'])->middleware('auth:sanct
 Route::get('/profile/posts', [PostController::class, 'profilePosts']);
 Route::get('/profile/replies', [PostController::class, 'profileReplies']);
 Route::get('/profile/likes/posts', [PostController::class, 'profilePostLikes']);
-Route::get('/profile/likes/comments', [PostController::class, 'profileCommentLikes']);
 Route::get('/profile/reposts', [PostController::class, 'profileReposts']);
 Route::get('/profile/{username}', [ProfileController::class, 'show']);
 Route::put('/profile/{username}', [ProfileController::class, 'update']);
 Route::post('/profile/{username}/follow', [ProfileController::class, 'follow']);
 Route::delete('/profile/{username}/follow', [ProfileController::class, 'unfollow']);
+Route::get('/profile/{username}/followers', [ProfileController::class, 'followers']);
+Route::get('/profile/{username}/following', [ProfileController::class, 'following']);
 
 Route::post('/posts', [PostController::class, 'store']);
 Route::get('/posts/{id}', [PostController::class, 'show']);
-Route::get('/posts/{id}/comments', [PostController::class, 'comments']);
+Route::get('/posts/{id}/replies', [PostController::class, 'replies']);
+Route::post('/posts/{id}/replies', [PostController::class, 'storeReply']);
 Route::put('/posts/{id}', [PostController::class, 'update']);
 Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 Route::post('/posts/{id}/like', [PostController::class, 'like']);
 Route::delete('/posts/{id}/like', [PostController::class, 'unlike']);
 Route::post('/posts/{id}/repost', [PostController::class, 'repost']);
-Route::post('/posts/{id}/comments', [PostController::class, 'storeComment']);
+Route::delete('/posts/{id}/repost', [PostController::class, 'unrepost']);
 
 Route::post('/media/upload', [PostController::class, 'uploadMedia']);
-
-Route::post('/comments/{id}/like', [PostController::class, 'likeComment']);
-Route::delete('/comments/{id}/like', [PostController::class, 'unlikeComment']);
-Route::post('/comments/{id}/repost', [PostController::class, 'repostComment']);
-Route::delete('/comments/{id}/repost', [PostController::class, 'unrepostComment']);
-
-
-Route::delete('/posts/{id}/repost', [PostController::class, 'unrepost']);
-Route::get('/profile/{username}/followers', [ProfileController::class, 'followers']);
-Route::get('/profile/{username}/following', [ProfileController::class, 'following']);
