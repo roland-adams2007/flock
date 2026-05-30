@@ -21,9 +21,23 @@ Route::post('/profile/{username}/follow', [ProfileController::class, 'follow']);
 Route::delete('/profile/{username}/follow', [ProfileController::class, 'unfollow']);
 
 Route::post('/posts', [PostController::class, 'store']);
+Route::get('/posts/{id}', [PostController::class, 'show']);
+Route::get('/posts/{id}/comments', [PostController::class, 'comments']);
 Route::put('/posts/{id}', [PostController::class, 'update']);
 Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 Route::post('/posts/{id}/like', [PostController::class, 'like']);
 Route::delete('/posts/{id}/like', [PostController::class, 'unlike']);
 Route::post('/posts/{id}/repost', [PostController::class, 'repost']);
 Route::post('/posts/{id}/comments', [PostController::class, 'storeComment']);
+
+Route::post('/media/upload', [PostController::class, 'uploadMedia']);
+
+Route::post('/comments/{id}/like', [PostController::class, 'likeComment']);
+Route::delete('/comments/{id}/like', [PostController::class, 'unlikeComment']);
+Route::post('/comments/{id}/repost', [PostController::class, 'repostComment']);
+Route::delete('/comments/{id}/repost', [PostController::class, 'unrepostComment']);
+
+
+Route::delete('/posts/{id}/repost', [PostController::class, 'unrepost']);
+Route::get('/profile/{username}/followers', [ProfileController::class, 'followers']);
+Route::get('/profile/{username}/following', [ProfileController::class, 'following']);

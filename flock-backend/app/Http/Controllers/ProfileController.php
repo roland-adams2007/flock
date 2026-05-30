@@ -4,28 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\Follower;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class ProfileController extends Controller
 {
-
-    public function me(Request $request)
-    {
-
-        $user = auth()->user()->load('profile');
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'display_name'     => $user->profile?->display_name,
-                'avatar'   => $user->profile?->avatar,
-                'username' => $user->profile?->username,
-            ]
-        ], 200);
-    }
-
-
     private function authUser(Request $request): ?User
     {
         $token = $request->bearerToken();
@@ -34,12 +16,26 @@ class ProfileController extends Controller
         return $record?->tokenable;
     }
 
+    public function me(Request $request)
+    {
+        $user = auth()->user()->load('profile');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'display_name' => $user->profile?->display_name,
+                'avatar' => $user->profile?->avatar,
+                'username' => $user->profile?->username,
+            ]
+        ], 200);
+    }
+
     public function show($username, Request $request)
     {
         $authUser = $this->authUser($request);
 
         $user = User::whereHas('profile', fn($q) => $q->where('username', $username))
-            ->with(['profile', 'followers.profile', 'following.profile'])
+            ->with(['profile'])
             ->first();
 
         if (!$user) {
@@ -97,6 +93,46 @@ class ProfileController extends Controller
                 'created_at' => $user->created_at?->toIso8601String(),
             ],
         ]);
+    }
+
+    public function followers(Request $request)
+    {
+        $authUser = $this->authUser($request);
+        if (!$authUser) return response()->json(['error' => 'Unauthenticated.'], 401);
+
+        $followers = $authUser->followers()->with('profile')->get()->map(function ($follower) use ($authUser) {
+            $isFollowing = $authUser->following()->where('following_id', $follower->id)->exists();
+
+            return [
+                'username' => $follower->profile->username,
+                'display_name' => $follower->profile->display_name,
+                'avatar' => $follower->profile->avatar,
+                'bio' => $follower->profile->bio,
+                'is_following' => $isFollowing,
+            ];
+        });
+
+        return response()->json(['success' => true, 'followers' => $followers]);
+    }
+
+    public function following(Request $request)
+    {
+        $authUser = $this->authUser($request);
+        if (!$authUser) return response()->json(['error' => 'Unauthenticated.'], 401);
+
+        $following = $authUser->following()->with('profile')->get()->map(function ($followedUser) use ($authUser) {
+            $isFollowing = $authUser->following()->where('following_id', $followedUser->id)->exists();
+
+            return [
+                'username' => $followedUser->profile->username,
+                'display_name' => $followedUser->profile->display_name,
+                'avatar' => $followedUser->profile->avatar,
+                'bio' => $followedUser->profile->bio,
+                'is_following' => $isFollowing,
+            ];
+        });
+
+        return response()->json(['success' => true, 'following' => $following]);
     }
 
     public function follow($username, Request $request)
