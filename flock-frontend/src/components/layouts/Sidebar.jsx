@@ -111,7 +111,7 @@ const Sidebar = () => {
     },
     {
       label: "Following",
-      path: "/follows",
+      path: `/${me.username}/follows`,
       requiresAuth: true,
       icon: (
         <svg

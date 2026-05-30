@@ -20,6 +20,22 @@ function getInitials(name) {
     .toUpperCase();
 }
 
+function timeAgo(dateStr) {
+  if (!dateStr) return "";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(dateStr).toLocaleDateString("en-NG", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function Avatar({ src, name, size = 38, onClick }) {
   if (src) {
     return (
@@ -217,15 +233,60 @@ function LoadingSpinner() {
   );
 }
 
+function PostMediaGrid({ media, onStopProp }) {
+  if (!media || media.length === 0) return null;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: media.length === 1 ? "1fr" : "1fr 1fr",
+        gap: "0.4rem",
+        marginTop: "0.65rem",
+        borderRadius: "12px",
+        overflow: "hidden",
+      }}
+    >
+      {media.map((m) =>
+        m.type === "video" ? (
+          <video
+            key={m.id}
+            src={m.path}
+            controls
+            style={{
+              width: "100%",
+              borderRadius: "10px",
+              maxHeight: 280,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <img
+            key={m.id}
+            src={m.path}
+            alt=""
+            style={{
+              width: "100%",
+              objectFit: "cover",
+              maxHeight: 280,
+              borderRadius: media.length === 1 ? "12px" : "6px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+      )}
+    </div>
+  );
+}
+
 function CommentModal({ post, token, myInfo, onClose, onCommentPosted }) {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const { createComment } = usePostStore();
+  const { createReply } = usePostStore();
 
   const submit = async () => {
     if (!text.trim() || submitting) return;
     setSubmitting(true);
-    await createComment(post.id, text, token);
+    await createReply(post.id, text, token);
     onCommentPosted && onCommentPosted();
     setText("");
     setSubmitting(false);
@@ -349,7 +410,7 @@ function PostCard({
     post.is_reposted ?? post._reposted ?? false,
   );
   const [repostCount, setRepostCount] = useState(post?.counts?.reposts ?? 0);
-  const [commentCount, setCommentCount] = useState(post?.counts?.comments ?? 0);
+  const [commentCount, setCommentCount] = useState(post?.counts?.replies ?? 0);
   const [showMenu, setShowMenu] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editText, setEditText] = useState(post.content ?? "");
@@ -485,8 +546,26 @@ function PostCard({
               }}
             >
               <div className="post-meta">
-                <span className="post-name">{user?.display_name}</span>
-                <span className="post-handle">@{user?.username}</span>
+                <span
+                  className="post-name"
+                  style={{ cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/${user?.username}`);
+                  }}
+                >
+                  {user?.display_name}
+                </span>
+                <span
+                  className="post-handle"
+                  style={{ cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/${user?.username}`);
+                  }}
+                >
+                  @{user?.username}
+                </span>
                 <span className="post-time">
                   {post.created_at
                     ? new Date(post.created_at).toLocaleDateString("en-NG", {
@@ -617,7 +696,13 @@ function PostCard({
                 }}
               >
                 ↩ Replying to{" "}
-                <span style={{ color: "var(--accent)" }}>
+                <span
+                  style={{ color: "var(--accent)", cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/${post.reply_to.user?.username}`);
+                  }}
+                >
                   @{post.reply_to.user?.username}
                 </span>
               </div>
@@ -626,46 +711,7 @@ function PostCard({
             <div className="post-text">{post.content}</div>
 
             {post.media && post.media.length > 0 && (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns:
-                    post.media.length === 1 ? "1fr" : "1fr 1fr",
-                  gap: "0.4rem",
-                  marginTop: "0.65rem",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                }}
-              >
-                {post.media.map((m) =>
-                  m.type == "video" ? (
-                    <video
-                      key={m.id}
-                      src={m.path}
-                      controls
-                      style={{
-                        width: "100%",
-                        borderRadius: "10px",
-                        maxHeight: 280,
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <img
-                      key={m.id}
-                      src={m.path}
-                      alt="hi"
-                      style={{
-                        width: "100%",
-                        objectFit: "cover",
-                        maxHeight: 280,
-                        borderRadius: post.media.length === 1 ? "12px" : "6px",
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ),
-                )}
-              </div>
+              <PostMediaGrid media={post.media} />
             )}
 
             <div className="actions" onClick={(e) => e.stopPropagation()}>
@@ -820,6 +866,202 @@ function PostCard({
         />
       )}
     </>
+  );
+}
+
+function ReplyCard({ post, token, myInfo, myUsername, onDeleted }) {
+  const navigate = useNavigate();
+  const [liked, setLiked] = useState(post.is_liked ?? false);
+  const [likeCount, setLikeCount] = useState(post?.counts?.likes ?? 0);
+  const [commentCount] = useState(post?.counts?.replies ?? 0);
+  const { likePost, unlikePost } = usePostStore();
+
+  const toggleLike = async (e) => {
+    e.stopPropagation();
+    if (!token) return;
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount((c) => (wasLiked ? Math.max(0, c - 1) : c + 1));
+    if (wasLiked) await unlikePost(post.id, token);
+    else await likePost(post.id, token);
+  };
+
+  const user = post.user;
+
+  return (
+    <div
+      className="post-card"
+      style={{ cursor: "pointer" }}
+      onClick={() => navigate(`/${user?.username}/post/${post.id}`)}
+    >
+      {post.reply_to && (
+        <div
+          style={{
+            marginBottom: "0.6rem",
+            padding: "0.6rem 0.75rem",
+            background: "var(--surface2)",
+            borderRadius: 10,
+            borderLeft: "2px solid var(--border2)",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(
+              `/${post.reply_to.user?.username}/post/${post.reply_to.id}`,
+            );
+          }}
+        >
+          <div
+            style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}
+          >
+            <Avatar
+              src={post.reply_to.user?.avatar}
+              name={post.reply_to.user?.display_name}
+              size={22}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/${post.reply_to.user?.username}`);
+              }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.35rem",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "0.78rem",
+                    color: "var(--text)",
+                    cursor: "pointer",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/${post.reply_to.user?.username}`);
+                  }}
+                >
+                  {post.reply_to.user?.display_name}
+                </span>
+                <span
+                  style={{
+                    color: "var(--text3)",
+                    fontSize: "0.74rem",
+                    cursor: "pointer",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/${post.reply_to.user?.username}`);
+                  }}
+                >
+                  @{post.reply_to.user?.username}
+                </span>
+              </div>
+              <div
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--text2)",
+                  lineHeight: 1.4,
+                  marginTop: "0.15rem",
+                }}
+              >
+                {post.reply_to.content?.slice(0, 120)}
+                {post.reply_to.content?.length > 120 ? "…" : ""}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: "0.85rem" }}>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/${user?.username}`);
+          }}
+        >
+          <Avatar src={user?.avatar} name={user?.display_name} size={38} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="post-meta">
+            <span
+              className="post-name"
+              style={{ cursor: "pointer" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/${user?.username}`);
+              }}
+            >
+              {user?.display_name}
+            </span>
+            <span
+              className="post-handle"
+              style={{ cursor: "pointer" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/${user?.username}`);
+              }}
+            >
+              @{user?.username}
+            </span>
+            <span className="post-time">
+              {post.created_at
+                ? new Date(post.created_at).toLocaleDateString("en-NG", {
+                    month: "short",
+                    day: "numeric",
+                  })
+                : ""}
+            </span>
+          </div>
+
+          <div className="post-text">{post.content}</div>
+
+          {post.media && post.media.length > 0 && (
+            <PostMediaGrid media={post.media} />
+          )}
+
+          <div className="actions" onClick={(e) => e.stopPropagation()}>
+            <button
+              className={`act${liked ? " liked" : ""}`}
+              onClick={toggleLike}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill={liked ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              {fmt(likeCount)}
+            </button>
+            <button
+              className="act"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/${user?.username}/post/${post.id}`);
+              }}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              {fmt(commentCount)}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1337,15 +1579,13 @@ const Profile = () => {
       return (
         <>
           {replies.map((p) => (
-            <PostCard
+            <ReplyCard
               key={p.id}
               post={p}
-              isReply={true}
               token={token}
               myInfo={myInfo}
               myUsername={myUsername}
               onDeleted={handlePostDeleted}
-              onEdited={handlePostEdited}
             />
           ))}
           {isLoadingReplies && replies.length > 0 && <LoadingSpinner />}

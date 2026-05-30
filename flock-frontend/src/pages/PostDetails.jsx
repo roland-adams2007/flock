@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuthStore, usePostStore } from "../store/store";
+import { useAuthStore, usePostStore, useProfileStore } from "../store/store";
 
 function fmt(n) {
   if (!n && n !== 0) return "0";
@@ -245,6 +245,53 @@ function MediaGrid({ media, onOpenLightbox }) {
             >
               +{count - 4}
             </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ReplyMediaGrid({ media }) {
+  if (!media || media.length === 0) return null;
+  const count = media.length;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: count === 1 ? "1fr" : "1fr 1fr",
+        gap: "0.25rem",
+        marginTop: "0.5rem",
+        marginBottom: "0.5rem",
+        borderRadius: "10px",
+        overflow: "hidden",
+      }}
+    >
+      {media.slice(0, 4).map((m) => (
+        <div key={m.id} style={{ position: "relative", overflow: "hidden" }}>
+          {m.type === "video" ? (
+            <video
+              src={m.path}
+              controls
+              style={{
+                width: "100%",
+                maxHeight: 160,
+                objectFit: "cover",
+                display: "block",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img
+              src={m.path}
+              alt=""
+              style={{
+                width: "100%",
+                height: 160,
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
           )}
         </div>
       ))}
@@ -512,13 +559,32 @@ function Lightbox({
             src={post?.user?.avatar}
             name={post?.user?.display_name}
             size={40}
+            onClick={() => {
+              onClose();
+              navigate(`/${post?.user?.username}`);
+            }}
           />
           <div>
-            <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fff" }}>
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: "0.9rem",
+                color: "#fff",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                onClose();
+                navigate(`/${post?.user?.username}`);
+              }}
+            >
               {post?.user?.display_name}
             </div>
             <div
-              style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.78rem" }}
+              style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", cursor: "pointer" }}
+              onClick={() => {
+                onClose();
+                navigate(`/${post?.user?.username}`);
+              }}
             >
               @{post?.user?.username}
             </div>
@@ -580,6 +646,11 @@ function Lightbox({
                   src={r.user?.avatar}
                   name={r.user?.display_name}
                   size={30}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                    navigate(`/${r.user?.username}`);
+                  }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
@@ -595,6 +666,12 @@ function Lightbox({
                         fontWeight: 600,
                         fontSize: "0.82rem",
                         color: "#fff",
+                        cursor: "pointer",
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClose();
+                        navigate(`/${r.user?.username}`);
                       }}
                     >
                       {r.user?.display_name}
@@ -603,6 +680,12 @@ function Lightbox({
                       style={{
                         fontSize: "0.75rem",
                         color: "rgba(255,255,255,0.35)",
+                        cursor: "pointer",
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClose();
+                        navigate(`/${r.user?.username}`);
                       }}
                     >
                       @{r.user?.username}
@@ -626,6 +709,36 @@ function Lightbox({
                   >
                     {r.content}
                   </div>
+                  {r.media && r.media.length > 0 && (
+                    <div
+                      style={{ marginTop: "0.4rem" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {r.media[0].type === "video" ? (
+                        <video
+                          src={r.media[0].path}
+                          controls
+                          style={{
+                            width: "100%",
+                            maxHeight: 120,
+                            borderRadius: 8,
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={r.media[0].path}
+                          alt=""
+                          style={{
+                            width: "100%",
+                            maxHeight: 120,
+                            borderRadius: 8,
+                            objectFit: "cover",
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
                   <div
                     style={{
                       display: "flex",
@@ -838,11 +951,22 @@ function ReplyCard({ reply, token, myInfo, isAuthenticated, isLast }) {
               fontWeight: 600,
               fontSize: "0.88rem",
               color: "var(--text)",
+              cursor: "pointer",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/${reply.user?.username}`);
             }}
           >
             {reply.user?.display_name}
           </span>
-          <span style={{ color: "var(--text3)", fontSize: "0.8rem" }}>
+          <span
+            style={{ color: "var(--text3)", fontSize: "0.8rem", cursor: "pointer" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/${reply.user?.username}`);
+            }}
+          >
             @{reply.user?.username}
           </span>
           <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>
@@ -862,17 +986,11 @@ function ReplyCard({ reply, token, myInfo, isAuthenticated, isLast }) {
         </div>
 
         {reply.media && reply.media.length > 0 && (
-          <div style={{ marginBottom: "0.5rem" }}>
-            <img
-              src={reply.media[0].path}
-              alt=""
-              style={{
-                maxWidth: "100%",
-                borderRadius: 10,
-                maxHeight: 200,
-                objectFit: "cover",
-              }}
-            />
+          <div
+            style={{ marginBottom: "0.5rem" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ReplyMediaGrid media={reply.media} />
           </div>
         )}
 
@@ -971,6 +1089,15 @@ const PostDetails = () => {
     clearPost,
   } = usePostStore();
 
+  const {
+    profiles,
+    fetchProfile,
+    isFollowing,
+    isFollowLoading,
+    followUser,
+    unfollowUser,
+  } = useProfileStore();
+
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [reposted, setReposted] = useState(false);
@@ -979,7 +1106,14 @@ const PostDetails = () => {
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [repliesPage, setRepliesPage] = useState(1);
+  const [allReplies, setAllReplies] = useState([]);
+  const [hasMoreReplies, setHasMoreReplies] = useState(false);
   const replyRef = useRef(null);
+
+  const postUsername = currentPost?.user?.username ?? username;
+  const profileData = profiles[postUsername] ?? null;
+  const isMyPost = me?.username === postUsername;
 
   useEffect(() => {
     if (id) {
@@ -996,8 +1130,34 @@ const PostDetails = () => {
       setReposted(currentPost.is_reposted ?? false);
       setRepostCount(currentPost.counts?.reposts ?? 0);
       setReplyCount(currentPost.counts?.replies ?? 0);
+      const u = currentPost.user?.username;
+      if (u && !profiles[u]) {
+        fetchProfile(u, token);
+      }
     }
   }, [currentPost]);
+
+  useEffect(() => {
+    setAllReplies(replies);
+  }, [replies]);
+
+  const loadMoreReplies = useCallback(async () => {
+    if (isLoadingReplies || !hasMoreReplies) return;
+    const next = repliesPage + 1;
+    setRepliesPage(next);
+    await fetchReplies(id, token, next);
+  }, [isLoadingReplies, hasMoreReplies, repliesPage, id, token]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const nearBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 300;
+      if (nearBottom) loadMoreReplies();
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [loadMoreReplies]);
 
   const toggleLike = async () => {
     if (!isAuthenticated) {
@@ -1021,6 +1181,15 @@ const PostDetails = () => {
     setRepostCount((c) => (wasReposted ? Math.max(0, c - 1) : c + 1));
     if (wasReposted) await unrepostPost(currentPost.id, token);
     else await repostPost(currentPost.id, token);
+  };
+
+  const handleFollow = () => {
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
+    if (isFollowing) unfollowUser(postUsername, token);
+    else followUser(postUsername, token);
   };
 
   const focusReply = () => {
@@ -1174,6 +1343,10 @@ const PostDetails = () => {
                   src={parentPost.user?.avatar}
                   name={parentPost.user?.display_name}
                   size={34}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/${parentPost.user?.username}`);
+                  }}
                 />
                 <div
                   style={{
@@ -1194,10 +1367,30 @@ const PostDetails = () => {
                     marginBottom: "0.25rem",
                   }}
                 >
-                  <span style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                      cursor: "pointer",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/${parentPost.user?.username}`);
+                    }}
+                  >
                     {parentPost.user?.display_name}
                   </span>
-                  <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>
+                  <span
+                    style={{
+                      color: "var(--text3)",
+                      fontSize: "0.78rem",
+                      cursor: "pointer",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/${parentPost.user?.username}`);
+                    }}
+                  >
                     @{parentPost.user?.username}
                   </span>
                   <span style={{ color: "var(--text3)", fontSize: "0.75rem" }}>
@@ -1213,6 +1406,11 @@ const PostDetails = () => {
                 >
                   {parentPost.content}
                 </div>
+                {parentPost.media && parentPost.media.length > 0 && (
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <ReplyMediaGrid media={parentPost.media} />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1238,14 +1436,63 @@ const PostDetails = () => {
                     fontWeight: 700,
                     fontSize: "0.95rem",
                     lineHeight: 1.2,
+                    cursor: "pointer",
                   }}
+                  onClick={() => navigate(`/${post.user?.username}`)}
                 >
                   {post.user?.display_name}
                 </div>
-                <div style={{ color: "var(--text3)", fontSize: "0.82rem" }}>
+                <div
+                  style={{
+                    color: "var(--text3)",
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => navigate(`/${post.user?.username}`)}
+                >
                   @{post.user?.username}
                 </div>
               </div>
+              {!isMyPost && isAuthenticated && (
+                <button
+                  onClick={handleFollow}
+                  disabled={isFollowLoading}
+                  style={{
+                    padding: "0.38rem 1rem",
+                    borderRadius: 20,
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    fontFamily: "'Instrument Sans', sans-serif",
+                    cursor: "pointer",
+                    border: isFollowing
+                      ? "1.5px solid var(--border2)"
+                      : "none",
+                    background: isFollowing ? "transparent" : "var(--accent)",
+                    color: isFollowing ? "var(--text2)" : "var(--accent-text)",
+                    opacity: isFollowLoading ? 0.6 : 1,
+                  }}
+                >
+                  {isFollowLoading ? "…" : isFollowing ? "Following" : "Follow"}
+                </button>
+              )}
+              {!isMyPost && !isAuthenticated && (
+                <button
+                  onClick={() => navigate("/auth")}
+                  style={{
+                    padding: "0.38rem 1rem",
+                    borderRadius: 20,
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    fontFamily: "'Instrument Sans', sans-serif",
+                    cursor: "pointer",
+                    border: "none",
+                    background: "var(--accent)",
+                    color: "var(--accent-text)",
+                  }}
+                >
+                  Follow
+                </button>
+              )}
             </div>
 
             <div
@@ -1496,7 +1743,7 @@ const PostDetails = () => {
           : `${replies.length} ${replies.length === 1 ? "Reply" : "Replies"}`}
       </div>
 
-      {isLoadingReplies ? (
+      {isLoadingReplies && replies.length === 0 ? (
         [1, 2, 3].map((k) => <ReplySkeleton key={k} />)
       ) : replies.length === 0 ? (
         <div
@@ -1510,16 +1757,39 @@ const PostDetails = () => {
           No replies yet. Be the first!
         </div>
       ) : (
-        replies.map((reply, i) => (
-          <ReplyCard
-            key={reply.id}
-            reply={reply}
-            token={token}
-            myInfo={myInfo}
-            isAuthenticated={isAuthenticated}
-            isLast={i === replies.length - 1}
-          />
-        ))
+        <>
+          {replies.map((reply, i) => (
+            <ReplyCard
+              key={reply.id}
+              reply={reply}
+              token={token}
+              myInfo={myInfo}
+              isAuthenticated={isAuthenticated}
+              isLast={i === replies.length - 1}
+            />
+          ))}
+          {isLoadingReplies && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "1rem",
+              }}
+            >
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  border: "2px solid var(--border2)",
+                  borderTopColor: "var(--accent)",
+                  borderRadius: "50%",
+                  animation: "spin 0.7s linear infinite",
+                }}
+              />
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+        </>
       )}
     </>
   );
