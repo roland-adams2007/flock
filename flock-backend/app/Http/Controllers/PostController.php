@@ -446,6 +446,7 @@ class PostController extends Controller
         $page     = (int) ($request->query('page', 1));
         $perPage  = 20;
 
+        // 1. Guest Feed: Simple chronological fallback
         if (!$authUser) {
             $posts = Post::with(['user.profile', 'media'])
                 ->withCount(['likes', 'replies', 'reposts'])
@@ -467,59 +468,55 @@ class PostController extends Controller
             ]);
         }
 
+
         $followingIds = $authUser->following()->pluck('users.id')->toArray();
+        $followingIdsList = !empty($followingIds) ? implode(',', array_map('intval', $followingIds)) : '0';
 
-        $followingPosts = collect();
-        if (!empty($followingIds)) {
-            $followingPosts = Post::with(['user.profile', 'media'])
-                ->withCount(['likes', 'replies', 'reposts'])
-                ->whereNull('parent_post_id')
-                ->whereIn('user_id', $followingIds)
-                ->where('created_at', '>=', now()->subDays(7))
-                ->get();
-        }
-
-        $trendingPosts = Post::with(['user.profile', 'media'])
-            ->withCount(['likes', 'replies', 'reposts'])
+        // 3. PostgreSQL Main Query Execution
+        $posts = Post::query()
+            // FIX: Put select and selectRaw FIRST so withCount can append to them safely
+            ->select('posts.*')
+            ->selectRaw("
+            (
+                (
+                    ((SELECT COUNT(*) FROM likes WHERE likes.likeable_id = posts.id AND likes.likeable_type = 'App\\\\Models\\\\Post') * 3) +
+                    ((SELECT COUNT(*) FROM posts AS replies WHERE replies.parent_post_id = posts.id) * 5) +
+                    ((SELECT COUNT(*) FROM reposts WHERE reposts.post_id = posts.id) * 8)
+                ) / 
+                GREATEST(EXTRACT(EPOCH FROM (NOW() - posts.created_at)) / 3600, 1.0)
+            ) + (CASE WHEN posts.user_id IN ($followingIdsList) THEN 10.0 ELSE 0.0 END) AS algo_score
+        ")
+            ->with(['user.profile', 'media'])
+            ->withCount(['likes', 'replies', 'reposts']) // Laravel now appends likes_count, replies_count, etc. safely
             ->whereNull('parent_post_id')
-            ->where('created_at', '>=', now()->subDays(3))
-            ->get();
+            // Enforce the overlapping time windows (Trending vs Following)
+            ->where(function ($q) use ($followingIds) {
+                $q->where('created_at', '>=', now()->subDays(3)); // Trending window
+                if (!empty($followingIds)) {
+                    $q->orWhere(function ($sub) use ($followingIds) {
+                        $sub->whereIn('user_id', $followingIds)
+                            ->where('created_at', '>=', now()->subDays(7)); // Following window
+                    });
+                }
+            })
+            ->orderByDesc('algo_score')
+            ->paginate($perPage, ['*'], 'page', $page);
 
-        $allPosts = $followingPosts->concat($trendingPosts)->unique('id');
-
-        $scored = $allPosts->map(function ($post) use ($followingIds) {
-            $score = ($post->likes_count   * 3)
-                + ($post->replies_count  * 5)
-                + ($post->reposts_count  * 8);
-
-            $hoursOld   = max(now()->diffInHours($post->created_at), 1);
-            $finalScore = $score / $hoursOld;
-
-            if (in_array($post->user_id, $followingIds)) {
-                $finalScore += 10;
-            }
-
-            $post->_score = $finalScore;
-            return $post;
-        })->sortByDesc('_score')->values();
-
-        $total    = $scored->count();
-        $lastPage = (int) ceil($total / $perPage);
-        $items    = $scored->forPage($page, $perPage)->values();
-
-        $formatted = $items->map(fn($post) => $this->formatPost($post, $authUser));
+        // 4. Transform only the 20 fetched items
+        $posts->getCollection()->transform(fn($post) => $this->formatPost($post, $authUser));
 
         return response()->json([
             'success' => true,
-            'posts'   => $formatted,
+            'posts'   => $posts->items(),
             'meta'    => [
-                'current_page' => $page,
-                'last_page'    => max($lastPage, 1),
-                'total'        => $total,
+                'current_page' => $posts->currentPage(),
+                'last_page'    => $posts->lastPage(),
+                'total'        => $posts->total(),
                 'per_page'     => $perPage,
             ],
         ]);
     }
+
 
     public function profilePosts(Request $request)
     {
