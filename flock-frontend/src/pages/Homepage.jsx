@@ -30,7 +30,10 @@ function timeAgo(dateStr) {
   if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d`;
-  return new Date(dateStr).toLocaleDateString("en-NG", { month: "short", day: "numeric" });
+  return new Date(dateStr).toLocaleDateString("en-NG", {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function Avatar({ src, name, size = 38, onClick }) {
@@ -39,6 +42,7 @@ function Avatar({ src, name, size = 38, onClick }) {
       <img
         src={src}
         alt={name}
+        loading="lazy"
         onClick={onClick}
         style={{
           width: size,
@@ -55,7 +59,12 @@ function Avatar({ src, name, size = 38, onClick }) {
     <div
       className="avatar"
       onClick={onClick}
-      style={{ width: size, height: size, flexShrink: 0, cursor: onClick ? "pointer" : "default" }}
+      style={{
+        width: size,
+        height: size,
+        flexShrink: 0,
+        cursor: onClick ? "pointer" : "default",
+      }}
     >
       {getInitials(name)}
     </div>
@@ -92,7 +101,8 @@ function MediaGrid({ media, onImageClick }) {
             overflow: "hidden",
             cursor: "pointer",
             gridColumn: count === 3 && i === 0 ? "1 / -1" : undefined,
-            height: count === 1 ? "auto" : count === 3 && i === 0 ? 180 : undefined,
+            height:
+              count === 1 ? "auto" : count === 3 && i === 0 ? 180 : undefined,
           }}
           onClick={() => onImageClick && onImageClick(i)}
         >
@@ -100,14 +110,25 @@ function MediaGrid({ media, onImageClick }) {
             <video
               src={m.path}
               controls
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <img
               src={m.path}
+              loading="lazy"
               alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
             />
           )}
           {count > 4 && i === 3 && (
@@ -136,7 +157,14 @@ function MediaGrid({ media, onImageClick }) {
 function MediaPreviewComposer({ items, onRemove }) {
   if (!items || items.length === 0) return null;
   return (
-    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
+    <div
+      style={{
+        display: "flex",
+        gap: "0.5rem",
+        flexWrap: "wrap",
+        marginTop: "0.5rem",
+      }}
+    >
       {items.map((item, i) => (
         <div
           key={i}
@@ -150,9 +178,17 @@ function MediaPreviewComposer({ items, onRemove }) {
           }}
         >
           {item.type === "video" ? (
-            <video src={item.localUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <video
+              src={item.localUrl}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           ) : (
-            <img src={item.localUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img
+              src={item.localUrl}
+              loading="lazy"
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           )}
           <button
             onClick={() => onRemove(i)}
@@ -173,7 +209,14 @@ function MediaPreviewComposer({ items, onRemove }) {
               padding: 0,
             }}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -209,7 +252,14 @@ function MediaPreviewComposer({ items, onRemove }) {
 
 function PostSkeleton() {
   return (
-    <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border)", display: "flex", gap: "0.75rem" }}>
+    <div
+      style={{
+        padding: "1rem 1.25rem",
+        borderBottom: "1px solid var(--border)",
+        display: "flex",
+        gap: "0.75rem",
+      }}
+    >
       <div
         style={{
           width: 40,
@@ -220,10 +270,42 @@ function PostSkeleton() {
           animation: "skelPulse 1.4s ease-in-out infinite",
         }}
       />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem", paddingTop: 4 }}>
-        <div style={{ width: "45%", height: 12, background: "var(--surface2)", borderRadius: 5, animation: "skelPulse 1.4s ease-in-out infinite" }} />
-        <div style={{ width: "90%", height: 14, background: "var(--surface2)", borderRadius: 5, animation: "skelPulse 1.4s ease-in-out infinite" }} />
-        <div style={{ width: "70%", height: 14, background: "var(--surface2)", borderRadius: 5, animation: "skelPulse 1.4s ease-in-out infinite" }} />
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5rem",
+          paddingTop: 4,
+        }}
+      >
+        <div
+          style={{
+            width: "45%",
+            height: 12,
+            background: "var(--surface2)",
+            borderRadius: 5,
+            animation: "skelPulse 1.4s ease-in-out infinite",
+          }}
+        />
+        <div
+          style={{
+            width: "90%",
+            height: 14,
+            background: "var(--surface2)",
+            borderRadius: 5,
+            animation: "skelPulse 1.4s ease-in-out infinite",
+          }}
+        />
+        <div
+          style={{
+            width: "70%",
+            height: 14,
+            background: "var(--surface2)",
+            borderRadius: 5,
+            animation: "skelPulse 1.4s ease-in-out infinite",
+          }}
+        />
       </div>
     </div>
   );
@@ -231,7 +313,8 @@ function PostSkeleton() {
 
 function PostCard({ post, token, isAuthenticated, myUsername }) {
   const navigate = useNavigate();
-  const { likePost, unlikePost, repostPost, unrepostPost, updateFeedPost } = usePostStore();
+  const { likePost, unlikePost, repostPost, unrepostPost, updateFeedPost } =
+    usePostStore();
   const [liked, setLiked] = useState(post.is_liked ?? false);
   const [likeCount, setLikeCount] = useState(post.counts?.likes ?? 0);
   const [reposted, setReposted] = useState(post.is_reposted ?? false);
@@ -239,24 +322,36 @@ function PostCard({ post, token, isAuthenticated, myUsername }) {
 
   const toggleLike = async (e) => {
     e.stopPropagation();
-    if (!isAuthenticated) { navigate("/auth"); return; }
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
     const wasLiked = liked;
     setLiked(!wasLiked);
     const next = wasLiked ? Math.max(0, likeCount - 1) : likeCount + 1;
     setLikeCount(next);
-    updateFeedPost(post.id, { is_liked: !wasLiked, counts: { ...post.counts, likes: next } });
+    updateFeedPost(post.id, {
+      is_liked: !wasLiked,
+      counts: { ...post.counts, likes: next },
+    });
     if (wasLiked) await unlikePost(post.id, token);
     else await likePost(post.id, token);
   };
 
   const toggleRepost = async (e) => {
     e.stopPropagation();
-    if (!isAuthenticated) { navigate("/auth"); return; }
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
     const wasReposted = reposted;
     setReposted(!wasReposted);
     const next = wasReposted ? Math.max(0, repostCount - 1) : repostCount + 1;
     setRepostCount(next);
-    updateFeedPost(post.id, { is_reposted: !wasReposted, counts: { ...post.counts, reposts: next } });
+    updateFeedPost(post.id, {
+      is_reposted: !wasReposted,
+      counts: { ...post.counts, reposts: next },
+    });
     if (wasReposted) await unrepostPost(post.id, token);
     else await repostPost(post.id, token);
   };
@@ -285,7 +380,9 @@ function PostCard({ post, token, isAuthenticated, myUsername }) {
         transition: "background 0.12s",
       }}
       onClick={() => navigate(`/${post.user?.username}/post/${post.id}`)}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface2)")}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.background = "var(--surface2)")
+      }
       onMouseLeave={(e) => (e.currentTarget.style.background = "")}
     >
       {post.is_repost && (
@@ -300,7 +397,14 @@ function PostCard({ post, token, isAuthenticated, myUsername }) {
             paddingLeft: "2.75rem",
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+          >
             <polyline points="17 1 21 5 17 9" />
             <path d="M3 11V9a4 4 0 0 1 4-4h14" />
             <polyline points="7 23 3 19 7 15" />
@@ -315,23 +419,51 @@ function PostCard({ post, token, isAuthenticated, myUsername }) {
           src={post.user?.avatar}
           name={post.user?.display_name}
           size={40}
-          onClick={(e) => { e.stopPropagation(); navigate(`/${post.user?.username}`); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/${post.user?.username}`);
+          }}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.3rem", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.35rem",
+              marginBottom: "0.3rem",
+              flexWrap: "wrap",
+            }}
+          >
             <span
-              style={{ fontWeight: 600, fontSize: "0.88rem", cursor: "pointer", color: "var(--text)" }}
-              onClick={(e) => { e.stopPropagation(); navigate(`/${post.user?.username}`); }}
+              style={{
+                fontWeight: 600,
+                fontSize: "0.88rem",
+                cursor: "pointer",
+                color: "var(--text)",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/${post.user?.username}`);
+              }}
             >
               {post.user?.display_name}
             </span>
             <span
-              style={{ color: "var(--text3)", fontSize: "0.8rem", cursor: "pointer" }}
-              onClick={(e) => { e.stopPropagation(); navigate(`/${post.user?.username}`); }}
+              style={{
+                color: "var(--text3)",
+                fontSize: "0.8rem",
+                cursor: "pointer",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/${post.user?.username}`);
+              }}
             >
               @{post.user?.username}
             </span>
-            <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>· {timeAgo(post.created_at)}</span>
+            <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>
+              · {timeAgo(post.created_at)}
+            </span>
           </div>
 
           {post.content && (
@@ -351,23 +483,45 @@ function PostCard({ post, token, isAuthenticated, myUsername }) {
           {post.media && post.media.length > 0 && (
             <MediaGrid
               media={post.media}
-              onImageClick={(i) => navigate(`/${post.user?.username}/post/${post.id}`)}
+              onImageClick={(i) =>
+                navigate(`/${post.user?.username}/post/${post.id}`)
+              }
             />
           )}
 
-          <div style={{ display: "flex", gap: "0.1rem", marginTop: "0.25rem" }} onClick={(e) => e.stopPropagation()}>
+          <div
+            style={{ display: "flex", gap: "0.1rem", marginTop: "0.25rem" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               style={btnStyle(false)}
-              onClick={(e) => { e.stopPropagation(); navigate(`/${post.user?.username}/post/${post.id}`); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/${post.user?.username}/post/${post.id}`);
+              }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
               {(post.counts?.replies ?? 0) > 0 && fmt(post.counts.replies)}
             </button>
 
             <button style={btnStyle(reposted)} onClick={toggleRepost}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
                 <polyline points="17 1 21 5 17 9" />
                 <path d="M3 11V9a4 4 0 0 1 4-4h14" />
                 <polyline points="7 23 3 19 7 15" />
@@ -377,7 +531,14 @@ function PostCard({ post, token, isAuthenticated, myUsername }) {
             </button>
 
             <button style={btnStyle(liked, "var(--red)")} onClick={toggleLike}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill={liked ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
               {likeCount > 0 && fmt(likeCount)}
@@ -425,7 +586,9 @@ const Homepage = () => {
   useEffect(() => {
     if (!sentinelRef.current) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
       { threshold: 0.1 },
     );
     observer.observe(sentinelRef.current);
@@ -466,7 +629,7 @@ const Homepage = () => {
           }
           return updated;
         });
-      })
+      }),
     );
   };
 
@@ -490,7 +653,12 @@ const Homepage = () => {
       .map((m) => ({ url: m.url, type: m.uploadType ?? m.type }));
 
     setPosting(true);
-    const result = await createPost(postText, token, me?.username, mediaPayload);
+    const result = await createPost(
+      postText,
+      token,
+      me?.username,
+      mediaPayload,
+    );
     if (result?.success && result?.post) {
       prependToFeed(result.post);
       setPostText("");
@@ -500,7 +668,8 @@ const Homepage = () => {
   };
 
   const stillUploading = mediaItems.some((m) => m.uploading);
-  const canPost = (postText.trim() || mediaItems.length > 0) && !posting && !stillUploading;
+  const canPost =
+    (postText.trim() || mediaItems.length > 0) && !posting && !stillUploading;
 
   return (
     <>
@@ -537,7 +706,9 @@ const Homepage = () => {
               placeholder="What's on your mind?"
               value={postText}
               onChange={(e) => setPostText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submitPost(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submitPost();
+              }}
               style={{
                 width: "100%",
                 background: "transparent",
@@ -554,7 +725,14 @@ const Homepage = () => {
             {mediaItems.length > 0 && (
               <MediaPreviewComposer items={mediaItems} onRemove={removeMedia} />
             )}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.6rem" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: "0.6rem",
+              }}
+            >
               <div style={{ display: "flex", gap: "0.25rem" }}>
                 {mediaItems.length < 4 && (
                   <>
@@ -580,8 +758,22 @@ const Homepage = () => {
                         alignItems: "center",
                       }}
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect
+                          x="3"
+                          y="3"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                        />
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <polyline points="21 15 16 10 5 21" />
                       </svg>
@@ -625,8 +817,16 @@ const Homepage = () => {
           }}
         >
           <div>
-            <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>Join the conversation</div>
-            <div style={{ color: "var(--text3)", fontSize: "0.82rem", marginTop: "0.2rem" }}>
+            <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
+              Join the conversation
+            </div>
+            <div
+              style={{
+                color: "var(--text3)",
+                fontSize: "0.82rem",
+                marginTop: "0.2rem",
+              }}
+            >
               Sign in to post and interact
             </div>
           </div>
@@ -653,7 +853,14 @@ const Homepage = () => {
       {isLoadingFeed && feed.length === 0 ? (
         [1, 2, 3, 4, 5].map((k) => <PostSkeleton key={k} />)
       ) : feed.length === 0 ? (
-        <div style={{ padding: "3rem 1.5rem", textAlign: "center", color: "var(--text3)", fontSize: "0.875rem" }}>
+        <div
+          style={{
+            padding: "3rem 1.5rem",
+            textAlign: "center",
+            color: "var(--text3)",
+            fontSize: "0.875rem",
+          }}
+        >
           {isAuthenticated
             ? "Follow people to see their posts here, or check back later for trending content."
             : "No posts yet."}
@@ -671,7 +878,13 @@ const Homepage = () => {
           ))}
           <div ref={sentinelRef} style={{ height: 1 }} />
           {isLoadingFeed && (
-            <div style={{ display: "flex", justifyContent: "center", padding: "1.25rem" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "1.25rem",
+              }}
+            >
               <div
                 style={{
                   width: 22,
@@ -685,7 +898,14 @@ const Homepage = () => {
             </div>
           )}
           {feedPage >= feedLastPage && feed.length > 0 && (
-            <div style={{ padding: "1.5rem", textAlign: "center", color: "var(--text3)", fontSize: "0.8rem" }}>
+            <div
+              style={{
+                padding: "1.5rem",
+                textAlign: "center",
+                color: "var(--text3)",
+                fontSize: "0.8rem",
+              }}
+            >
               You're all caught up
             </div>
           )}

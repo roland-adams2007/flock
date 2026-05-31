@@ -10,6 +10,7 @@ use App\Models\PostMedia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\PersonalAccessToken;
+use Intervention\Image\Laravel\Facades\Image;
 
 class PostController extends Controller
 {
@@ -59,48 +60,149 @@ class PostController extends Controller
         ];
     }
 
+    // public function uploadMedia(Request $request)
+    // {
+    //     $user = $this->authUser($request);
+    //     if (!$user) {
+    //         return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+    //     }
+
+    //     $validator = validator($request->all(), [
+    //         'file' => 'required|file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi|max:51200',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         $errors = $validator->errors()->all();
+    //         $message = 'Invalid file.';
+    //         foreach ($errors as $error) {
+    //             if (str_contains(strtolower($error), 'mimes')) {
+    //                 $message = 'Unsupported file type. Allowed: JPG, PNG, GIF, WEBP, MP4, MOV, AVI.';
+    //             } elseif (str_contains(strtolower($error), 'max')) {
+    //                 $message = 'File too large. Max 50 MB.';
+    //             } elseif (str_contains(strtolower($error), 'required')) {
+    //                 $message = 'No file provided.';
+    //             }
+    //         }
+    //         return response()->json(['success' => false, 'message' => $message, 'errors' => $errors], 422);
+    //     }
+
+    //     try {
+    //         $file = $request->file('file');
+    //         $type = str_starts_with($file->getMimeType(), 'video') ? 'video' : 'image';
+    //         $path = $file->store('media', 's3');
+
+    //         if (!$path) {
+    //             return response()->json(['success' => false, 'message' => 'Failed to save file.'], 500);
+    //         }
+
+    //         $url = Storage::disk('s3')->url($path);
+
+    //         return response()->json(['success' => true, 'url' => $url, 'type' => $type], 201);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['success' => false, 'message' => 'Upload failed.'], 500);
+    //     }
+    // }
+
     public function uploadMedia(Request $request)
     {
         $user = $this->authUser($request);
+
         if (!$user) {
-            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
         }
 
         $validator = validator($request->all(), [
-            'file' => 'required|file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi|max:51200',
+            'file' => 'required|file|mimes:jpg,jpeg,png,webp,mp4,mov,avi|max:51200',
+        ], [
+            'file.required' => 'No file provided.',
+            'file.mimes'    => 'Unsupported file type. Allowed: JPG, JPEG, PNG, WEBP, MP4, MOV, AVI.',
+            'file.max'      => 'File too large. Max 50 MB.',
         ]);
 
         if ($validator->fails()) {
-            $errors = $validator->errors()->all();
-            $message = 'Invalid file.';
-            foreach ($errors as $error) {
-                if (str_contains(strtolower($error), 'mimes')) {
-                    $message = 'Unsupported file type. Allowed: JPG, PNG, GIF, WEBP, MP4, MOV, AVI.';
-                } elseif (str_contains(strtolower($error), 'max')) {
-                    $message = 'File too large. Max 50 MB.';
-                } elseif (str_contains(strtolower($error), 'required')) {
-                    $message = 'No file provided.';
-                }
-            }
-            return response()->json(['success' => false, 'message' => $message, 'errors' => $errors], 422);
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first('file'),
+                'errors'  => $validator->errors()->all(),
+            ], 422);
         }
 
         try {
             $file = $request->file('file');
-            $type = str_starts_with($file->getMimeType(), 'video') ? 'video' : 'image';
-            $path = $file->store('media', 's3');
+            $mimeType = $file->getMimeType();
+            $isImage = str_starts_with($mimeType, 'image/');
+            $type = $isImage ? 'image' : 'video';
 
-            if (!$path) {
-                return response()->json(['success' => false, 'message' => 'Failed to save file.'], 500);
+            $uniqueId = uniqid('', true);
+            $disk = Storage::disk('s3');
+
+            if ($isImage) {
+                // If it's a GIF, don't re-encode it to JPEG (which destroys animation)
+                if ($mimeType === 'image/gif') {
+                    $path = "media/{$uniqueId}.gif";
+                    $disk->putFileAs('media', $file, "{$uniqueId}.gif", [
+                        'visibility'   => 'public',
+                        'CacheControl' => 'public, max-age=31536000',
+                        'ContentType'  => 'image/gif',
+                    ]);
+                } else {
+                    // Convert PNG, WebP, and standard JPEGs into highly optimized JPEGs
+                    $processed = Image::read($file)
+                        ->scaleDown(width: 1920)
+                        ->toJpeg(80);
+
+                    $path = "media/{$uniqueId}.jpg";
+
+                    $disk->put($path, (string) $processed, [
+                        'visibility'   => 'public',
+                        'CacheControl' => 'public, max-age=31536000',
+                        'ContentType'  => 'image/jpeg',
+                    ]);
+                }
+
+                $finalUrl = $disk->url($path);
+            } else {
+                // Handle all your allowed video formats natively (mp4, webm, ogg, quicktime)
+                $extension = strtolower($file->getClientOriginalExtension());
+
+                // Fallback extension check if clientOriginalExtension comes back empty
+                if (empty($extension)) {
+                    $extension = match ($mimeType) {
+                        'video/quicktime' => 'mov',
+                        'video/webm' => 'webm',
+                        'video/ogg' => 'ogv',
+                        default => 'mp4',
+                    };
+                }
+
+                $path = "media/{$uniqueId}.{$extension}";
+
+                $disk->putFileAs('media', $file, "{$uniqueId}.{$extension}", [
+                    'visibility'   => 'public',
+                    'CacheControl' => 'public, max-age=31536000',
+                    'ContentType'  => $mimeType,
+                ]);
+
+                $finalUrl = $disk->url($path);
             }
 
-            $url = Storage::disk('s3')->url($path);
-
-            return response()->json(['success' => true, 'url' => $url, 'type' => $type], 201);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Upload failed.'], 500);
+            return response()->json([
+                'success' => true,
+                'url'     => $finalUrl,
+                'type'    => $type,
+            ], 201);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Upload failed.',
+            ], 500);
         }
     }
+
+
 
     public function store(Request $request)
     {
@@ -387,8 +489,8 @@ class PostController extends Controller
 
         $scored = $allPosts->map(function ($post) use ($followingIds) {
             $score = ($post->likes_count   * 3)
-                   + ($post->replies_count  * 5)
-                   + ($post->reposts_count  * 8);
+                + ($post->replies_count  * 5)
+                + ($post->reposts_count  * 8);
 
             $hoursOld   = max(now()->diffInHours($post->created_at), 1);
             $finalScore = $score / $hoursOld;

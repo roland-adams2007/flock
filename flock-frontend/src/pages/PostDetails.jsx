@@ -42,6 +42,7 @@ function Avatar({ src, name, size = 38, onClick }) {
       <img
         src={src}
         alt={name}
+        loading="lazy"
         onClick={onClick}
         style={{
           width: size,
@@ -171,7 +172,10 @@ function MediaGrid({ media, onOpenLightbox }) {
     if (count === 2)
       return { gridTemplateColumns: "1fr 1fr", gridTemplateRows: "220px" };
     if (count === 3)
-      return { gridTemplateColumns: "1fr 1fr", gridTemplateRows: "160px 160px" };
+      return {
+        gridTemplateColumns: "1fr 1fr",
+        gridTemplateRows: "160px 160px",
+      };
     return { gridTemplateColumns: "1fr 1fr", gridTemplateRows: "160px 160px" };
   };
   return (
@@ -205,15 +209,26 @@ function MediaGrid({ media, onOpenLightbox }) {
           {m.type === "video" ? (
             <video
               src={m.path}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
               onClick={(e) => e.stopPropagation()}
               controls
             />
           ) : (
             <img
               src={m.path}
+              loading="lazy"
               alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
             />
           )}
           {count > 4 && index === 3 && (
@@ -260,14 +275,25 @@ function ReplyMediaGrid({ media }) {
             <video
               src={m.path}
               controls
-              style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }}
+              style={{
+                width: "100%",
+                maxHeight: 160,
+                objectFit: "cover",
+                display: "block",
+              }}
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <img
               src={m.path}
+              loading="lazy"
               alt=""
-              style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }}
+              style={{
+                width: "100%",
+                maxHeight: 160,
+                objectFit: "cover",
+                display: "block",
+              }}
             />
           )}
         </div>
@@ -307,6 +333,7 @@ function MediaPreview({ items, onRemove }) {
           ) : (
             <img
               src={item.localUrl}
+              loading="lazy"
               alt=""
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
@@ -330,7 +357,14 @@ function MediaPreview({ items, onRemove }) {
               padding: 0,
             }}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -385,7 +419,8 @@ function Lightbox({
   useEffect(() => {
     const handler = (e) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") setCurrent((c) => Math.min(c + 1, media.length - 1));
+      if (e.key === "ArrowRight")
+        setCurrent((c) => Math.min(c + 1, media.length - 1));
       if (e.key === "ArrowLeft") setCurrent((c) => Math.max(c - 1, 0));
     };
     window.addEventListener("keydown", handler);
@@ -396,7 +431,10 @@ function Lightbox({
 
   const sendComment = async () => {
     if (!replyText.trim() || replying) return;
-    if (!isAuthenticated) { navigate("/auth"); return; }
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
     setReplying(true);
     await onSendReply(replyText);
     setReplyText("");
@@ -443,7 +481,14 @@ function Lightbox({
             zIndex: 10,
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -451,7 +496,10 @@ function Lightbox({
 
         {media.length > 1 && current > 0 && (
           <button
-            onClick={(e) => { e.stopPropagation(); setCurrent((c) => c - 1); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrent((c) => c - 1);
+            }}
             style={{
               position: "absolute",
               left: 16,
@@ -470,7 +518,14 @@ function Lightbox({
               zIndex: 10,
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
@@ -478,7 +533,10 @@ function Lightbox({
 
         {media.length > 1 && current < media.length - 1 && (
           <button
-            onClick={(e) => { e.stopPropagation(); setCurrent((c) => c + 1); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrent((c) => c + 1);
+            }}
             style={{
               position: "absolute",
               right: 320 + 16,
@@ -497,7 +555,14 @@ function Lightbox({
               zIndex: 10,
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>
@@ -505,12 +570,36 @@ function Lightbox({
 
         <div
           onClick={(e) => e.stopPropagation()}
-          style={{ maxWidth: "100%", maxHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
           {item.type === "video" ? (
-            <video src={item.path} controls autoPlay style={{ maxWidth: "100%", maxHeight: "100vh", objectFit: "contain" }} />
+            <video
+              src={item.path}
+              controls
+              autoPlay
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100vh",
+                objectFit: "contain",
+              }}
+            />
           ) : (
-            <img src={item.path} alt="" style={{ maxWidth: "100%", maxHeight: "100vh", objectFit: "contain" }} />
+            <img
+              src={item.path}
+              loading="lazy"
+              alt=""
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100vh",
+                objectFit: "contain",
+              }}
+            />
           )}
         </div>
 
@@ -528,7 +617,10 @@ function Lightbox({
             {media.map((_, i) => (
               <div
                 key={i}
-                onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrent(i);
+                }}
                 style={{
                   width: i === current ? 20 : 6,
                   height: 6,
@@ -567,18 +659,36 @@ function Lightbox({
             src={post?.user?.avatar}
             name={post?.user?.display_name}
             size={40}
-            onClick={() => { onClose(); navigate(`/${post?.user?.username}`); }}
+            onClick={() => {
+              onClose();
+              navigate(`/${post?.user?.username}`);
+            }}
           />
           <div>
             <div
-              style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fff", cursor: "pointer" }}
-              onClick={() => { onClose(); navigate(`/${post?.user?.username}`); }}
+              style={{
+                fontWeight: 700,
+                fontSize: "0.9rem",
+                color: "#fff",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                onClose();
+                navigate(`/${post?.user?.username}`);
+              }}
             >
               {post?.user?.display_name}
             </div>
             <div
-              style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", cursor: "pointer" }}
-              onClick={() => { onClose(); navigate(`/${post?.user?.username}`); }}
+              style={{
+                color: "rgba(255,255,255,0.4)",
+                fontSize: "0.78rem",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                onClose();
+                navigate(`/${post?.user?.username}`);
+              }}
             >
               @{post?.user?.username}
             </div>
@@ -599,11 +709,25 @@ function Lightbox({
 
         <div style={{ flex: 1, overflowY: "auto", padding: "0.5rem 0" }}>
           {isLoadingReplies ? (
-            <div style={{ padding: "1.5rem", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: "0.82rem" }}>
+            <div
+              style={{
+                padding: "1.5rem",
+                textAlign: "center",
+                color: "rgba(255,255,255,0.3)",
+                fontSize: "0.82rem",
+              }}
+            >
               Loading replies…
             </div>
           ) : replies.length === 0 ? (
-            <div style={{ padding: "1.5rem", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: "0.82rem" }}>
+            <div
+              style={{
+                padding: "1.5rem",
+                textAlign: "center",
+                color: "rgba(255,255,255,0.3)",
+                fontSize: "0.82rem",
+              }}
+            >
               No replies yet
             </div>
           ) : (
@@ -617,47 +741,124 @@ function Lightbox({
                   gap: "0.6rem",
                   cursor: "pointer",
                 }}
-                onClick={() => { onClose(); navigate(`/${r.user?.username}/post/${r.id}`); }}
+                onClick={() => {
+                  onClose();
+                  navigate(`/${r.user?.username}/post/${r.id}`);
+                }}
               >
                 <Avatar
                   src={r.user?.avatar}
                   name={r.user?.display_name}
                   size={30}
-                  onClick={(e) => { e.stopPropagation(); onClose(); navigate(`/${r.user?.username}`); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                    navigate(`/${r.user?.username}`);
+                  }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", gap: "0.4rem", alignItems: "baseline", flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.4rem",
+                      alignItems: "baseline",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     <span
-                      style={{ fontWeight: 600, fontSize: "0.82rem", color: "#fff", cursor: "pointer" }}
-                      onClick={(e) => { e.stopPropagation(); onClose(); navigate(`/${r.user?.username}`); }}
+                      style={{
+                        fontWeight: 600,
+                        fontSize: "0.82rem",
+                        color: "#fff",
+                        cursor: "pointer",
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClose();
+                        navigate(`/${r.user?.username}`);
+                      }}
                     >
                       {r.user?.display_name}
                     </span>
                     <span
-                      style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", cursor: "pointer" }}
-                      onClick={(e) => { e.stopPropagation(); onClose(); navigate(`/${r.user?.username}`); }}
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "rgba(255,255,255,0.35)",
+                        cursor: "pointer",
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClose();
+                        navigate(`/${r.user?.username}`);
+                      }}
                     >
                       @{r.user?.username}
                     </span>
-                    <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.25)" }}>
+                    <span
+                      style={{
+                        fontSize: "0.72rem",
+                        color: "rgba(255,255,255,0.25)",
+                      }}
+                    >
                       {timeAgo(r.created_at)}
                     </span>
                   </div>
-                  <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.72)", lineHeight: 1.55, marginTop: "0.2rem" }}>
+                  <div
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "rgba(255,255,255,0.72)",
+                      lineHeight: 1.55,
+                      marginTop: "0.2rem",
+                    }}
+                  >
                     {r.content}
                   </div>
                   {r.media && r.media.length > 0 && (
-                    <div style={{ marginTop: "0.4rem" }} onClick={(e) => e.stopPropagation()}>
+                    <div
+                      style={{ marginTop: "0.4rem" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {r.media[0].type === "video" ? (
-                        <video src={r.media[0].path} controls style={{ width: "100%", maxHeight: 120, borderRadius: 8, objectFit: "cover" }} />
+                        <video
+                          src={r.media[0].path}
+                          controls
+                          style={{
+                            width: "100%",
+                            maxHeight: 120,
+                            borderRadius: 8,
+                            objectFit: "cover",
+                          }}
+                        />
                       ) : (
-                        <img src={r.media[0].path} alt="" style={{ width: "100%", maxHeight: 120, borderRadius: 8, objectFit: "cover" }} />
+                        <img
+                          src={r.media[0].path}
+                          loading="lazy"
+                          alt=""
+                          style={{
+                            width: "100%",
+                            maxHeight: 120,
+                            borderRadius: 8,
+                            objectFit: "cover",
+                          }}
+                        />
                       )}
                     </div>
                   )}
-                  <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.4rem" }}>
-                    <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.3)" }}>
-                      {fmt(r.counts?.likes ?? 0)} likes · {fmt(r.counts?.replies ?? 0)} replies
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.75rem",
+                      marginTop: "0.4rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "0.72rem",
+                        color: "rgba(255,255,255,0.3)",
+                      }}
+                    >
+                      {fmt(r.counts?.likes ?? 0)} likes ·{" "}
+                      {fmt(r.counts?.replies ?? 0)} replies
                     </span>
                   </div>
                 </div>
@@ -676,13 +877,20 @@ function Lightbox({
               alignItems: "flex-end",
             }}
           >
-            <Avatar src={myInfo?.avatar} name={myInfo?.display_name} size={32} />
+            <Avatar
+              src={myInfo?.avatar}
+              name={myInfo?.display_name}
+              size={32}
+            />
             <textarea
               rows="2"
               placeholder="Reply…"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) sendComment(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey))
+                  sendComment();
+              }}
               style={{
                 flex: 1,
                 background: "rgba(255,255,255,0.06)",
@@ -718,7 +926,13 @@ function Lightbox({
             </button>
           </div>
         ) : (
-          <div style={{ padding: "0.85rem 1.1rem", borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+          <div
+            style={{
+              padding: "0.85rem 1.1rem",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              textAlign: "center",
+            }}
+          >
             <button
               onClick={() => navigate("/auth")}
               style={{
@@ -796,51 +1010,115 @@ function ReplyCard({ reply, token, myInfo, isAuthenticated, isLast }) {
       }}
       onClick={() => navigate(`/${reply.user?.username}/post/${reply.id}`)}
     >
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0,
+          flexShrink: 0,
+        }}
+      >
         <Avatar
           src={reply.user?.avatar}
           name={reply.user?.display_name}
           size={38}
-          onClick={(e) => { e.stopPropagation(); navigate(`/${reply.user?.username}`); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/${reply.user?.username}`);
+          }}
         />
         {!isLast && (
-          <div style={{ width: 1, flex: 1, background: "var(--border)", marginTop: 4, minHeight: 16 }} />
+          <div
+            style={{
+              width: 1,
+              flex: 1,
+              background: "var(--border)",
+              marginTop: 4,
+              minHeight: 16,
+            }}
+          />
         )}
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.3rem", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            marginBottom: "0.3rem",
+            flexWrap: "wrap",
+          }}
+        >
           <span
-            style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--text)", cursor: "pointer" }}
-            onClick={(e) => { e.stopPropagation(); navigate(`/${reply.user?.username}`); }}
+            style={{
+              fontWeight: 600,
+              fontSize: "0.88rem",
+              color: "var(--text)",
+              cursor: "pointer",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/${reply.user?.username}`);
+            }}
           >
             {reply.user?.display_name}
           </span>
           <span
-            style={{ color: "var(--text3)", fontSize: "0.8rem", cursor: "pointer" }}
-            onClick={(e) => { e.stopPropagation(); navigate(`/${reply.user?.username}`); }}
+            style={{
+              color: "var(--text3)",
+              fontSize: "0.8rem",
+              cursor: "pointer",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/${reply.user?.username}`);
+            }}
           >
             @{reply.user?.username}
           </span>
-          <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>· {timeAgo(reply.created_at)}</span>
+          <span style={{ color: "var(--text3)", fontSize: "0.78rem" }}>
+            · {timeAgo(reply.created_at)}
+          </span>
         </div>
 
-        <div style={{ fontSize: "0.9rem", lineHeight: 1.6, color: "var(--text)", marginBottom: "0.6rem" }}>
+        <div
+          style={{
+            fontSize: "0.9rem",
+            lineHeight: 1.6,
+            color: "var(--text)",
+            marginBottom: "0.6rem",
+          }}
+        >
           {reply.content}
         </div>
 
         {reply.media && reply.media.length > 0 && (
-          <div style={{ marginBottom: "0.5rem" }} onClick={(e) => e.stopPropagation()}>
+          <div
+            style={{ marginBottom: "0.5rem" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <ReplyMediaGrid media={reply.media} />
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "0.1rem" }} onClick={(e) => e.stopPropagation()}>
+        <div
+          style={{ display: "flex", gap: "0.1rem" }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             style={{ ...btnBase, color: liked ? "var(--red)" : "var(--text3)" }}
             onClick={toggleLike}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill={liked ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
             </svg>
             {likeCount > 0 && <span>{fmt(likeCount)}</span>}
@@ -848,19 +1126,42 @@ function ReplyCard({ reply, token, myInfo, isAuthenticated, isLast }) {
 
           <button
             style={{ ...btnBase, color: "var(--text3)" }}
-            onClick={(e) => { e.stopPropagation(); navigate(`/${reply.user?.username}/post/${reply.id}`); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/${reply.user?.username}/post/${reply.id}`);
+            }}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            {(reply.counts?.replies ?? 0) > 0 && <span>{fmt(reply.counts.replies)}</span>}
+            {(reply.counts?.replies ?? 0) > 0 && (
+              <span>{fmt(reply.counts.replies)}</span>
+            )}
           </button>
 
           <button
-            style={{ ...btnBase, color: reposted ? "var(--accent)" : "var(--text3)", opacity: isAuthenticated ? 1 : 0.5 }}
+            style={{
+              ...btnBase,
+              color: reposted ? "var(--accent)" : "var(--text3)",
+              opacity: isAuthenticated ? 1 : 0.5,
+            }}
             onClick={toggleRepost}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
               <polyline points="17 1 21 5 17 9" />
               <path d="M3 11V9a4 4 0 0 1 4-4h14" />
               <polyline points="7 23 3 19 7 15" />
@@ -957,7 +1258,9 @@ const PostDetails = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 300;
+      const nearBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 300;
       if (nearBottom) loadMoreReplies();
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -965,7 +1268,10 @@ const PostDetails = () => {
   }, [loadMoreReplies]);
 
   const toggleLike = async () => {
-    if (!isAuthenticated) { navigate("/auth"); return; }
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
     const wasLiked = liked;
     setLiked(!wasLiked);
     setLikeCount((c) => (wasLiked ? Math.max(0, c - 1) : c + 1));
@@ -974,7 +1280,10 @@ const PostDetails = () => {
   };
 
   const toggleRepost = async () => {
-    if (!isAuthenticated) { navigate("/auth"); return; }
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
     const wasReposted = reposted;
     setReposted(!wasReposted);
     setRepostCount((c) => (wasReposted ? Math.max(0, c - 1) : c + 1));
@@ -983,7 +1292,10 @@ const PostDetails = () => {
   };
 
   const handleFollow = () => {
-    if (!isAuthenticated) { navigate("/auth"); return; }
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
     if (isFollowing) unfollowUser(postUsername, token);
     else followUser(postUsername, token);
   };
@@ -1027,7 +1339,7 @@ const PostDetails = () => {
           }
           return updated;
         });
-      })
+      }),
     );
   };
 
@@ -1044,7 +1356,10 @@ const PostDetails = () => {
   const sendReply = async (textOverride) => {
     const content = textOverride ?? replyText;
     if (!content.trim() || replying) return;
-    if (!isAuthenticated) { navigate("/auth"); return; }
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
 
     const stillUploading = replyMediaItems.some((m) => m.uploading);
     if (stillUploading) return;
@@ -1054,7 +1369,12 @@ const PostDetails = () => {
       .map((m) => ({ url: m.url, type: m.uploadType ?? m.type }));
 
     setReplying(true);
-    const result = await createReply(currentPost.id, content, token, mediaPayload);
+    const result = await createReply(
+      currentPost.id,
+      content,
+      token,
+      mediaPayload,
+    );
     if (!result?.error) {
       if (!textOverride) setReplyText("");
       setReplyMediaItems([]);
@@ -1143,7 +1463,14 @@ const PostDetails = () => {
             alignItems: "center",
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+          >
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
@@ -1153,7 +1480,13 @@ const PostDetails = () => {
       {isLoadingPost ? (
         <PostSkeleton />
       ) : postError ? (
-        <div style={{ padding: "3rem 1.5rem", textAlign: "center", color: "var(--text3)" }}>
+        <div
+          style={{
+            padding: "3rem 1.5rem",
+            textAlign: "center",
+            color: "var(--text3)",
+          }}
+        >
           {postError}
         </div>
       ) : post ? (
@@ -1168,34 +1501,82 @@ const PostDetails = () => {
                 cursor: "pointer",
                 opacity: 0.75,
               }}
-              onClick={() => navigate(`/${parentPost.user?.username}/post/${parentPost.id}`)}
+              onClick={() =>
+                navigate(`/${parentPost.user?.username}/post/${parentPost.id}`)
+              }
             >
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
                 <Avatar
                   src={parentPost.user?.avatar}
                   name={parentPost.user?.display_name}
                   size={34}
-                  onClick={(e) => { e.stopPropagation(); navigate(`/${parentPost.user?.username}`); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/${parentPost.user?.username}`);
+                  }}
                 />
-                <div style={{ width: 1, flex: 1, background: "var(--border)", marginTop: 4, minHeight: 20 }} />
+                <div
+                  style={{
+                    width: 1,
+                    flex: 1,
+                    background: "var(--border)",
+                    marginTop: 4,
+                    minHeight: 20,
+                  }}
+                />
               </div>
               <div style={{ flex: 1, minWidth: 0, paddingBottom: "0.5rem" }}>
-                <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", marginBottom: "0.25rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.4rem",
+                    alignItems: "center",
+                    marginBottom: "0.25rem",
+                  }}
+                >
                   <span
-                    style={{ fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" }}
-                    onClick={(e) => { e.stopPropagation(); navigate(`/${parentPost.user?.username}`); }}
+                    style={{
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                      cursor: "pointer",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/${parentPost.user?.username}`);
+                    }}
                   >
                     {parentPost.user?.display_name}
                   </span>
                   <span
-                    style={{ color: "var(--text3)", fontSize: "0.78rem", cursor: "pointer" }}
-                    onClick={(e) => { e.stopPropagation(); navigate(`/${parentPost.user?.username}`); }}
+                    style={{
+                      color: "var(--text3)",
+                      fontSize: "0.78rem",
+                      cursor: "pointer",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/${parentPost.user?.username}`);
+                    }}
                   >
                     @{parentPost.user?.username}
                   </span>
-                  <span style={{ color: "var(--text3)", fontSize: "0.75rem" }}>· {timeAgo(parentPost.created_at)}</span>
+                  <span style={{ color: "var(--text3)", fontSize: "0.75rem" }}>
+                    · {timeAgo(parentPost.created_at)}
+                  </span>
                 </div>
-                <div style={{ fontSize: "0.88rem", color: "var(--text2)", lineHeight: 1.55 }}>
+                <div
+                  style={{
+                    fontSize: "0.88rem",
+                    color: "var(--text2)",
+                    lineHeight: 1.55,
+                  }}
+                >
                   {parentPost.content}
                 </div>
                 {parentPost.media && parentPost.media.length > 0 && (
@@ -1208,7 +1589,14 @@ const PostDetails = () => {
           )}
 
           <div style={{ padding: "1.4rem 1.25rem 0" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "0.85rem", marginBottom: "1rem" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "0.85rem",
+                marginBottom: "1rem",
+              }}
+            >
               <Avatar
                 src={post.user?.avatar}
                 name={post.user?.display_name}
@@ -1217,13 +1605,22 @@ const PostDetails = () => {
               />
               <div style={{ flex: 1 }}>
                 <div
-                  style={{ fontWeight: 700, fontSize: "0.95rem", lineHeight: 1.2, cursor: "pointer" }}
+                  style={{
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    lineHeight: 1.2,
+                    cursor: "pointer",
+                  }}
                   onClick={() => navigate(`/${post.user?.username}`)}
                 >
                   {post.user?.display_name}
                 </div>
                 <div
-                  style={{ color: "var(--text3)", fontSize: "0.82rem", cursor: "pointer" }}
+                  style={{
+                    color: "var(--text3)",
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                  }}
                   onClick={() => navigate(`/${post.user?.username}`)}
                 >
                   @{post.user?.username}
@@ -1283,7 +1680,10 @@ const PostDetails = () => {
             </div>
 
             {post.media && post.media.length > 0 && (
-              <MediaGrid media={post.media} onOpenLightbox={(index) => setLightboxIndex(index)} />
+              <MediaGrid
+                media={post.media}
+                onOpenLightbox={(index) => setLightboxIndex(index)}
+              />
             )}
 
             <div
@@ -1299,22 +1699,45 @@ const PostDetails = () => {
                 gap: "0.5rem",
               }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
               {fullDate}
             </div>
 
-            <div style={{ display: "flex", gap: "1.5rem", padding: "0.9rem 0", borderBottom: "1px solid var(--border)" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "1.5rem",
+                padding: "0.9rem 0",
+                borderBottom: "1px solid var(--border)",
+              }}
+            >
               <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
-                <strong style={{ color: "var(--text)", fontWeight: 700 }}>{fmt(repostCount)}</strong> Reposts
+                <strong style={{ color: "var(--text)", fontWeight: 700 }}>
+                  {fmt(repostCount)}
+                </strong>{" "}
+                Reposts
               </div>
               <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
-                <strong style={{ color: "var(--text)", fontWeight: 700 }}>{fmt(likeCount)}</strong> Likes
+                <strong style={{ color: "var(--text)", fontWeight: 700 }}>
+                  {fmt(likeCount)}
+                </strong>{" "}
+                Likes
               </div>
               <div style={{ fontSize: "0.875rem", color: "var(--text2)" }}>
-                <strong style={{ color: "var(--text)", fontWeight: 700 }}>{fmt(replyCount)}</strong> Replies
+                <strong style={{ color: "var(--text)", fontWeight: 700 }}>
+                  {fmt(replyCount)}
+                </strong>{" "}
+                Replies
               </div>
             </div>
 
@@ -1328,13 +1751,27 @@ const PostDetails = () => {
               }}
             >
               <button style={actBtnStyle()} onClick={focusReply}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
                 Reply
               </button>
               <button style={actBtnStyle(reposted)} onClick={toggleRepost}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
                   <polyline points="17 1 21 5 17 9" />
                   <path d="M3 11V9a4 4 0 0 1 4-4h14" />
                   <polyline points="7 23 3 19 7 15" />
@@ -1343,16 +1780,33 @@ const PostDetails = () => {
                 {reposted ? "Reposted" : "Repost"}
               </button>
               <button
-                style={{ ...actBtnStyle(liked), color: liked ? "var(--red)" : "var(--text3)" }}
+                style={{
+                  ...actBtnStyle(liked),
+                  color: liked ? "var(--red)" : "var(--text3)",
+                }}
                 onClick={toggleLike}
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2">
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill={liked ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
                 {liked ? "Liked" : "Like"}
               </button>
               <button style={actBtnStyle()} onClick={copyLink}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
                   <circle cx="18" cy="5" r="3" />
                   <circle cx="6" cy="12" r="3" />
                   <circle cx="18" cy="19" r="3" />
@@ -1374,8 +1828,18 @@ const PostDetails = () => {
             background: "var(--surface)",
           }}
         >
-          <div style={{ display: "flex", gap: "0.85rem", alignItems: "flex-start" }}>
-            <Avatar src={myInfo?.avatar} name={myInfo?.display_name} size={36} />
+          <div
+            style={{
+              display: "flex",
+              gap: "0.85rem",
+              alignItems: "flex-start",
+            }}
+          >
+            <Avatar
+              src={myInfo?.avatar}
+              name={myInfo?.display_name}
+              size={36}
+            />
             <div style={{ flex: 1, minWidth: 0 }}>
               <textarea
                 ref={replyRef}
@@ -1383,7 +1847,10 @@ const PostDetails = () => {
                 placeholder="Write your reply…"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) sendReply(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey))
+                    sendReply();
+                }}
                 style={{
                   width: "100%",
                   background: "transparent",
@@ -1399,9 +1866,19 @@ const PostDetails = () => {
                 }}
               />
               {replyMediaItems.length > 0 && (
-                <MediaPreview items={replyMediaItems} onRemove={removeReplyMedia} />
+                <MediaPreview
+                  items={replyMediaItems}
+                  onRemove={removeReplyMedia}
+                />
               )}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: "0.5rem",
+                }}
+              >
                 <div style={{ display: "flex", gap: "0.25rem" }}>
                   {replyMediaItems.length < 4 && (
                     <>
@@ -1427,8 +1904,22 @@ const PostDetails = () => {
                           alignItems: "center",
                         }}
                       >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect
+                            x="3"
+                            y="3"
+                            width="18"
+                            height="18"
+                            rx="2"
+                            ry="2"
+                          />
                           <circle cx="8.5" cy="8.5" r="1.5" />
                           <polyline points="21 15 16 10 5 21" />
                         </svg>
@@ -1438,7 +1929,11 @@ const PostDetails = () => {
                 </div>
                 <button
                   onClick={() => sendReply()}
-                  disabled={(!replyText.trim() && replyMediaItems.length === 0) || replying || stillUploading}
+                  disabled={
+                    (!replyText.trim() && replyMediaItems.length === 0) ||
+                    replying ||
+                    stillUploading
+                  }
                   style={{
                     background: "var(--accent)",
                     color: "var(--accent-text)",
@@ -1449,11 +1944,20 @@ const PostDetails = () => {
                     fontSize: "0.8rem",
                     fontWeight: 700,
                     cursor: "pointer",
-                    opacity: ((!replyText.trim() && replyMediaItems.length === 0) || replying || stillUploading) ? 0.5 : 1,
+                    opacity:
+                      (!replyText.trim() && replyMediaItems.length === 0) ||
+                      replying ||
+                      stillUploading
+                        ? 0.5
+                        : 1,
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {replying ? "Replying…" : stillUploading ? "Uploading…" : "Reply"}
+                  {replying
+                    ? "Replying…"
+                    : stillUploading
+                      ? "Uploading…"
+                      : "Reply"}
                 </button>
               </div>
             </div>
@@ -1471,7 +1975,9 @@ const PostDetails = () => {
             background: "var(--surface)",
           }}
         >
-          <span style={{ fontSize: "0.875rem", color: "var(--text3)" }}>Log in to reply</span>
+          <span style={{ fontSize: "0.875rem", color: "var(--text3)" }}>
+            Log in to reply
+          </span>
           <button
             onClick={() => navigate("/auth")}
             className="post-btn-sm"
@@ -1500,7 +2006,14 @@ const PostDetails = () => {
       {isLoadingReplies && replies.length === 0 ? (
         [1, 2, 3].map((k) => <ReplySkeleton key={k} />)
       ) : replies.length === 0 ? (
-        <div style={{ padding: "2.5rem 1.5rem", textAlign: "center", color: "var(--text3)", fontSize: "0.875rem" }}>
+        <div
+          style={{
+            padding: "2.5rem 1.5rem",
+            textAlign: "center",
+            color: "var(--text3)",
+            fontSize: "0.875rem",
+          }}
+        >
           No replies yet. Be the first!
         </div>
       ) : (
@@ -1516,7 +2029,13 @@ const PostDetails = () => {
             />
           ))}
           {isLoadingReplies && (
-            <div style={{ display: "flex", justifyContent: "center", padding: "1rem" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "1rem",
+              }}
+            >
               <div
                 style={{
                   width: 20,

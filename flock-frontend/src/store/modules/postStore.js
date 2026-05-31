@@ -63,9 +63,10 @@ export const usePostStore = create(
           );
           if (data.success) {
             set((state) => ({
-              replies: page === 1
-                ? data.comments
-                : [...state.replies, ...data.comments],
+              replies:
+                page === 1
+                  ? data.comments
+                  : [...state.replies, ...data.comments],
               isLoadingReplies: false,
             }));
             return data.meta ?? {};
@@ -86,9 +87,7 @@ export const usePostStore = create(
           });
           if (data.success) {
             set((state) => ({
-              feed: page === 1
-                ? data.posts
-                : [...state.feed, ...data.posts],
+              feed: page === 1 ? data.posts : [...state.feed, ...data.posts],
               feedPage: data.meta.current_page,
               feedLastPage: data.meta.last_page,
               isLoadingFeed: false,
@@ -223,6 +222,7 @@ export const usePostStore = create(
         try {
           const formData = new FormData();
           formData.append("file", file);
+
           const { data } = await axios.post(
             `${API_BASE}/media/upload`,
             formData,
@@ -233,7 +233,9 @@ export const usePostStore = create(
               },
             },
           );
+
           if (!data.url) return { error: true };
+
           return {
             url: data.url,
             type:
@@ -276,8 +278,7 @@ export const usePostStore = create(
           error: null,
         }),
 
-      clearFeed: () =>
-        set({ feed: [], feedPage: 1, feedLastPage: 1 }),
+      clearFeed: () => set({ feed: [], feedPage: 1, feedLastPage: 1 }),
     }),
     { name: "PostStore" },
   ),

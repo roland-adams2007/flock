@@ -1166,6 +1166,7 @@ function ComposePost({ myInfo, token, username, onPosted }) {
                   ) : (
                     <img
                       src={m.url}
+                      loading="lazy"
                       alt=""
                       style={{
                         width: "100%",
@@ -1788,6 +1789,7 @@ const Profile = () => {
             {info?.avatar ? (
               <img
                 src={info.avatar}
+                loading="lazy"
                 alt={info.display_name}
                 style={{
                   width: "100%",
@@ -1998,6 +2000,7 @@ const Profile = () => {
                     {avatarPreview ? (
                       <img
                         src={avatarPreview}
+                        loading="lazy"
                         alt=""
                         style={{
                           width: "100%",
@@ -2008,6 +2011,7 @@ const Profile = () => {
                     ) : editForm.avatar ? (
                       <img
                         src={editForm.avatar}
+                        loading="lazy"
                         alt=""
                         style={{
                           width: "100%",
