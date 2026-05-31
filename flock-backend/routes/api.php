@@ -10,6 +10,8 @@ Route::get('/auth/check-profile', [AuthController::class, 'checkProfile']);
 Route::post('/auth/sync', [AuthController::class, 'sync']);
 Route::get('/auth/me', [ProfileController::class, 'me'])->middleware('auth:sanctum');
 
+Route::get('/feed', [PostController::class, 'feed']);
+
 Route::get('/profile/posts', [PostController::class, 'profilePosts']);
 Route::get('/profile/replies', [PostController::class, 'profileReplies']);
 Route::get('/profile/likes/posts', [PostController::class, 'profilePostLikes']);

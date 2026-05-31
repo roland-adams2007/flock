@@ -15,6 +15,11 @@ export const usePostStore = create(
       postError: null,
       error: null,
 
+      feed: [],
+      isLoadingFeed: false,
+      feedPage: 1,
+      feedLastPage: 1,
+
       fetchPost: async (postId, token) => {
         set({
           isLoadingPost: true,
@@ -48,19 +53,49 @@ export const usePostStore = create(
         }
       },
 
-      fetchReplies: async (postId, token) => {
+      fetchReplies: async (postId, token, page = 1) => {
         set({ isLoadingReplies: true });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
           const { data } = await axios.get(
             `${API_BASE}/posts/${postId}/replies`,
-            { headers },
+            { headers, params: { page } },
           );
           if (data.success) {
-            set({ replies: data.comments, isLoadingReplies: false });
+            set((state) => ({
+              replies: page === 1
+                ? data.comments
+                : [...state.replies, ...data.comments],
+              isLoadingReplies: false,
+            }));
+            return data.meta ?? {};
           }
-        } catch (err) {
+        } catch {
           set({ isLoadingReplies: false });
+        }
+        return {};
+      },
+
+      fetchFeed: async (token, page = 1) => {
+        set({ isLoadingFeed: true });
+        try {
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const { data } = await axios.get(`${API_BASE}/feed`, {
+            headers,
+            params: { page },
+          });
+          if (data.success) {
+            set((state) => ({
+              feed: page === 1
+                ? data.posts
+                : [...state.feed, ...data.posts],
+              feedPage: data.meta.current_page,
+              feedLastPage: data.meta.last_page,
+              isLoadingFeed: false,
+            }));
+          }
+        } catch {
+          set({ isLoadingFeed: false });
         }
       },
 
@@ -111,9 +146,7 @@ export const usePostStore = create(
           await axios.post(
             `${API_BASE}/posts/${postId}/like`,
             {},
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            },
+            { headers: { Authorization: `Bearer ${token}` } },
           );
         } catch (err) {
           set({ error: err.response?.data?.message || "Failed to like post" });
@@ -137,9 +170,7 @@ export const usePostStore = create(
           const { data } = await axios.post(
             `${API_BASE}/posts/${postId}/repost`,
             {},
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            },
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           return data;
         } catch (err) {
@@ -160,11 +191,11 @@ export const usePostStore = create(
         }
       },
 
-      createReply: async (parentPostId, content, token) => {
+      createReply: async (parentPostId, content, token, mediaUrls = []) => {
         try {
           const { data } = await axios.post(
             `${API_BASE}/posts/${parentPostId}/replies`,
-            { content },
+            { content, media: mediaUrls },
             { headers: { Authorization: `Bearer ${token}` } },
           );
           if (data.success) {
@@ -224,6 +255,18 @@ export const usePostStore = create(
         }));
       },
 
+      updateFeedPost: (postId, changes) => {
+        set((state) => ({
+          feed: state.feed.map((p) =>
+            p.id === postId ? { ...p, ...changes } : p,
+          ),
+        }));
+      },
+
+      prependToFeed: (post) => {
+        set((state) => ({ feed: [post, ...state.feed] }));
+      },
+
       clearPost: () =>
         set({
           currentPost: null,
@@ -232,6 +275,9 @@ export const usePostStore = create(
           postError: null,
           error: null,
         }),
+
+      clearFeed: () =>
+        set({ feed: [], feedPage: 1, feedLastPage: 1 }),
     }),
     { name: "PostStore" },
   ),

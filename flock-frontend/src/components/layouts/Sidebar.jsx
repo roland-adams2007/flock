@@ -64,7 +64,6 @@ function getInitials(name) {
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [notifOpen, setNotifOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeText, setComposeText] = useState("");
 
@@ -91,10 +90,9 @@ const Sidebar = () => {
     },
     {
       label: "Notifications",
-      path: null,
+      path: "/notifications",
       badge: 4,
       requiresAuth: true,
-      onClick: () => setNotifOpen(true),
       icon: (
         <svg
           width="18"
@@ -111,7 +109,7 @@ const Sidebar = () => {
     },
     {
       label: "Following",
-      path: `/${me.username}/follows`,
+      path: `/${me?.username}/follows`,
       requiresAuth: true,
       icon: (
         <svg
@@ -131,7 +129,7 @@ const Sidebar = () => {
     },
     {
       label: "Profile",
-      path: me?.username ? `/${me.username}` : null,
+      path: me?.username ? `/${me?.username}` : null,
       requiresAuth: true,
       icon: (
         <svg
@@ -163,17 +161,6 @@ const Sidebar = () => {
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
         </svg>
       ),
-    },
-  ];
-
-  const notifs = [
-    { icon: "❤️", html: "Akintola Dev liked your post", time: "3m" },
-    { icon: "🔁", html: "Kemi Lagos reposted your thread", time: "21m" },
-    { icon: "👤", html: "Dev Diary NG followed you", time: "1h" },
-    {
-      icon: "💬",
-      html: 'Chiamaka Obi replied: "this is facts 🔥"',
-      time: "2h",
     },
   ];
 
@@ -451,65 +438,6 @@ const Sidebar = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {notifOpen && (
-        <div
-          className="modal-bg open"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setNotifOpen(false);
-          }}
-        >
-          <div className="modal-box">
-            <div className="modal-head">
-              <div className="serif" style={{ fontSize: "1.1rem" }}>
-                Notifications
-              </div>
-              <button className="close-btn" onClick={() => setNotifOpen(false)}>
-                ✕
-              </button>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.6rem",
-              }}
-            >
-              {notifs.map((n, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "0.75rem",
-                    padding: "0.65rem",
-                    borderRadius: "10px",
-                    background: "var(--surface2)",
-                  }}
-                >
-                  <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>
-                    {n.icon}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "0.875rem", lineHeight: 1.4 }}>
-                      {n.html}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "0.75rem",
-                        color: "var(--text3)",
-                        marginTop: "0.2rem",
-                      }}
-                    >
-                      {n.time} ago
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>

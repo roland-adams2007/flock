@@ -36,7 +36,9 @@ export const useProfileStore = create(
         set({ isLoadingProfile: true, error: null, activeUsername: username });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const { data } = await axios.get(`${API_BASE}/profile/${username}`, { headers });
+          const { data } = await axios.get(`${API_BASE}/profile/${username}`, {
+            headers,
+          });
           if (data.success) {
             set((state) => ({
               profiles: {
@@ -57,7 +59,10 @@ export const useProfileStore = create(
             }));
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to load profile", isLoadingProfile: false });
+          set({
+            error: err.response?.data?.message || "Failed to load profile",
+            isLoadingProfile: false,
+          });
         }
       },
 
@@ -68,11 +73,17 @@ export const useProfileStore = create(
         set({ isLoadingPosts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const { data } = await axios.get(`${API_BASE}/profile/posts`, { params: { username, page }, headers });
+          const { data } = await axios.get(`${API_BASE}/profile/posts`, {
+            params: { username, page },
+            headers,
+          });
           if (data.success) {
             set((state) => {
               const existing = state.profiles[username];
-              const prevData = !isFirstPage && existing?.posts?.data ? existing.posts.data : [];
+              const prevData =
+                !isFirstPage && existing?.posts?.data
+                  ? existing.posts.data
+                  : [];
               return {
                 profiles: {
                   ...state.profiles,
@@ -89,7 +100,10 @@ export const useProfileStore = create(
             });
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to load posts", isLoadingPosts: false });
+          set({
+            error: err.response?.data?.message || "Failed to load posts",
+            isLoadingPosts: false,
+          });
         }
       },
 
@@ -100,11 +114,17 @@ export const useProfileStore = create(
         set({ isLoadingReplies: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const { data } = await axios.get(`${API_BASE}/profile/replies`, { params: { username, page }, headers });
+          const { data } = await axios.get(`${API_BASE}/profile/replies`, {
+            params: { username, page },
+            headers,
+          });
           if (data.success) {
             set((state) => {
               const existing = state.profiles[username];
-              const prevData = !isFirstPage && existing?.replies?.data ? existing.replies.data : [];
+              const prevData =
+                !isFirstPage && existing?.replies?.data
+                  ? existing.replies.data
+                  : [];
               return {
                 profiles: {
                   ...state.profiles,
@@ -121,7 +141,10 @@ export const useProfileStore = create(
             });
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to load replies", isLoadingReplies: false });
+          set({
+            error: err.response?.data?.message || "Failed to load replies",
+            isLoadingReplies: false,
+          });
         }
       },
 
@@ -132,11 +155,17 @@ export const useProfileStore = create(
         set({ isLoadingLikedPosts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const { data } = await axios.get(`${API_BASE}/profile/likes/posts`, { params: { username, page }, headers });
+          const { data } = await axios.get(`${API_BASE}/profile/likes/posts`, {
+            params: { username, page },
+            headers,
+          });
           if (data.success) {
             set((state) => {
               const existing = state.profiles[username];
-              const prevData = !isFirstPage && existing?.likedPosts?.data ? existing.likedPosts.data : [];
+              const prevData =
+                !isFirstPage && existing?.likedPosts?.data
+                  ? existing.likedPosts.data
+                  : [];
               return {
                 profiles: {
                   ...state.profiles,
@@ -153,7 +182,10 @@ export const useProfileStore = create(
             });
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to load liked posts", isLoadingLikedPosts: false });
+          set({
+            error: err.response?.data?.message || "Failed to load liked posts",
+            isLoadingLikedPosts: false,
+          });
         }
       },
 
@@ -164,11 +196,17 @@ export const useProfileStore = create(
         set({ isLoadingReposts: true, error: null });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const { data } = await axios.get(`${API_BASE}/profile/reposts`, { params: { username, page }, headers });
+          const { data } = await axios.get(`${API_BASE}/profile/reposts`, {
+            params: { username, page },
+            headers,
+          });
           if (data.success) {
             set((state) => {
               const existing = state.profiles[username];
-              const prevData = !isFirstPage && existing?.reposts?.data ? existing.reposts.data : [];
+              const prevData =
+                !isFirstPage && existing?.reposts?.data
+                  ? existing.reposts.data
+                  : [];
               return {
                 profiles: {
                   ...state.profiles,
@@ -185,7 +223,10 @@ export const useProfileStore = create(
             });
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to load reposts", isLoadingReposts: false });
+          set({
+            error: err.response?.data?.message || "Failed to load reposts",
+            isLoadingReposts: false,
+          });
         }
       },
 
@@ -193,12 +234,18 @@ export const useProfileStore = create(
         set({ isLoadingFollowers: true });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const { data } = await axios.get(`${API_BASE}/profile/${username}/followers`, { headers });
+          const { data } = await axios.get(
+            `${API_BASE}/profile/${username}/followers`,
+            { headers },
+          );
           if (data.success) {
             set({ followers: data.followers, isLoadingFollowers: false });
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to load followers", isLoadingFollowers: false });
+          set({
+            error: err.response?.data?.message || "Failed to load followers",
+            isLoadingFollowers: false,
+          });
         }
       },
 
@@ -206,12 +253,18 @@ export const useProfileStore = create(
         set({ isLoadingFollowing: true });
         try {
           const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const { data } = await axios.get(`${API_BASE}/profile/${username}/following`, { headers });
+          const { data } = await axios.get(
+            `${API_BASE}/profile/${username}/following`,
+            { headers },
+          );
           if (data.success) {
             set({ following: data.following, isLoadingFollowing: false });
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to load following", isLoadingFollowing: false });
+          set({
+            error: err.response?.data?.message || "Failed to load following",
+            isLoadingFollowing: false,
+          });
         }
       },
 
@@ -220,7 +273,7 @@ export const useProfileStore = create(
           const { data } = await axios.put(
             `${API_BASE}/profile/${username}`,
             form,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           if (data.success) {
             set((state) => ({
@@ -235,7 +288,9 @@ export const useProfileStore = create(
           }
           return data;
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to update profile" });
+          set({
+            error: err.response?.data?.message || "Failed to update profile",
+          });
           return { error: true };
         }
       },
@@ -244,16 +299,22 @@ export const useProfileStore = create(
         try {
           const formData = new FormData();
           formData.append("file", file);
-          const { data } = await axios.post(`${API_BASE}/media/upload`, formData, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
+          const { data } = await axios.post(
+            `${API_BASE}/media/upload`,
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+              },
             },
-          });
+          );
           if (!data.url) return { error: true };
           return { url: data.url };
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to upload avatar" });
+          set({
+            error: err.response?.data?.message || "Failed to upload avatar",
+          });
           return { error: true };
         }
       },
@@ -264,21 +325,31 @@ export const useProfileStore = create(
           const { data } = await axios.post(
             `${API_BASE}/profile/${username}/follow`,
             {},
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           if (data.success) {
             set((state) => {
               const profile = state.profiles[username];
-              if (!profile) return { isFollowing: true, isFollowLoading: false };
+              if (!profile)
+                return { isFollowing: true, isFollowLoading: false };
               return {
-                profiles: { ...state.profiles, [username]: { ...profile, followers_count: profile.followers_count + 1 } },
+                profiles: {
+                  ...state.profiles,
+                  [username]: {
+                    ...profile,
+                    followers_count: profile.followers_count + 1,
+                  },
+                },
                 isFollowing: true,
                 isFollowLoading: false,
               };
             });
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to follow user", isFollowLoading: false });
+          set({
+            error: err.response?.data?.message || "Failed to follow user",
+            isFollowLoading: false,
+          });
         }
       },
 
@@ -287,26 +358,36 @@ export const useProfileStore = create(
         try {
           const { data } = await axios.delete(
             `${API_BASE}/profile/${username}/follow`,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           if (data.success) {
             set((state) => {
               const profile = state.profiles[username];
-              if (!profile) return { isFollowing: false, isFollowLoading: false };
+              if (!profile)
+                return { isFollowing: false, isFollowLoading: false };
               return {
-                profiles: { ...state.profiles, [username]: { ...profile, followers_count: Math.max(0, profile.followers_count - 1) } },
+                profiles: {
+                  ...state.profiles,
+                  [username]: {
+                    ...profile,
+                    followers_count: Math.max(0, profile.followers_count - 1),
+                  },
+                },
                 isFollowing: false,
                 isFollowLoading: false,
               };
             });
           }
         } catch (err) {
-          set({ error: err.response?.data?.message || "Failed to unfollow user", isFollowLoading: false });
+          set({
+            error: err.response?.data?.message || "Failed to unfollow user",
+            isFollowLoading: false,
+          });
         }
       },
 
       clearProfile: () => set({ activeUsername: null, error: null }),
     }),
-    { name: "ProfileStore" }
-  )
+    { name: "ProfileStore" },
+  ),
 );

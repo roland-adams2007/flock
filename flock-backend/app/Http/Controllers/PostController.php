@@ -53,13 +53,11 @@ class PostController extends Controller
                 'replies' => $post->replies_count,
                 'reposts' => $post->reposts_count,
             ],
-            'is_reply'   => !is_null($post->parent_post_id),
-            'is_liked'   => $isLiked,
+            'is_reply'    => !is_null($post->parent_post_id),
+            'is_liked'    => $isLiked,
             'is_reposted' => $isReposted,
         ];
     }
-
-    // ─── Media Upload ────────────────────────────────────────────────────────────
 
     public function uploadMedia(Request $request)
     {
@@ -103,8 +101,6 @@ class PostController extends Controller
             return response()->json(['success' => false, 'message' => 'Upload failed.'], 500);
         }
     }
-
-    // ─── Posts ───────────────────────────────────────────────────────────────────
 
     public function store(Request $request)
     {
@@ -151,7 +147,6 @@ class PostController extends Controller
             ->withCount(['likes', 'replies', 'reposts'])
             ->findOrFail($id);
 
-        // Load parent post if this is a reply
         $parent = null;
         if ($post->parent_post_id) {
             $parentPost = Post::with(['user.profile', 'media'])
@@ -202,22 +197,33 @@ class PostController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // ─── Replies (replies are just posts with parent_post_id) ────────────────────
-
     public function replies(Request $request, $id)
     {
         $authUser = $this->authUser($request);
 
         Post::findOrFail($id);
 
-        $replies = Post::where('parent_post_id', $id)
+        $page    = (int) ($request->query('page', 1));
+        $perPage = 20;
+
+        $paginator = Post::where('parent_post_id', $id)
             ->with(['user.profile', 'media'])
             ->withCount(['likes', 'replies', 'reposts'])
             ->latest()
-            ->get()
-            ->map(fn($post) => $this->formatPost($post, $authUser));
+            ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json(['success' => true, 'comments' => $replies]);
+        $paginator->getCollection()->transform(fn($post) => $this->formatPost($post, $authUser));
+
+        return response()->json([
+            'success'  => true,
+            'comments' => $paginator->items(),
+            'meta'     => [
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'total'        => $paginator->total(),
+                'per_page'     => $perPage,
+            ],
+        ]);
     }
 
     public function storeReply(Request $request, $id)
@@ -227,13 +233,30 @@ class PostController extends Controller
 
         Post::findOrFail($id);
 
-        $request->validate(['content' => 'required|string|max:500']);
+        $request->validate([
+            'content' => 'required|string|max:500',
+            'media'   => 'nullable|array|max:4',
+            'media.*.url'  => 'required_with:media|string|url',
+            'media.*.type' => 'required_with:media|in:image,video',
+        ]);
 
         $reply = Post::create([
             'user_id'        => $user->id,
             'content'        => $request->content,
             'parent_post_id' => $id,
         ]);
+
+        if ($request->has('media') && is_array($request->media)) {
+            foreach ($request->media as $m) {
+                if (!empty($m['url'])) {
+                    PostMedia::create([
+                        'post_id' => $reply->id,
+                        'path'    => $m['url'],
+                        'type'    => $m['type'] ?? 'image',
+                    ]);
+                }
+            }
+        }
 
         $reply->load('user.profile', 'media');
         $reply->loadCount(['likes', 'replies', 'reposts']);
@@ -243,8 +266,6 @@ class PostController extends Controller
             'comment' => $this->formatPost($reply, $user),
         ], 201);
     }
-
-    // ─── Likes ───────────────────────────────────────────────────────────────────
 
     public function like(Request $request, $id)
     {
@@ -284,8 +305,6 @@ class PostController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // ─── Reposts ─────────────────────────────────────────────────────────────────
-
     public function repost(Request $request, $id)
     {
         $user = $this->authUser($request);
@@ -319,7 +338,86 @@ class PostController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // ─── Profile Feeds ───────────────────────────────────────────────────────────
+    public function feed(Request $request)
+    {
+        $authUser = $this->authUser($request);
+        $page     = (int) ($request->query('page', 1));
+        $perPage  = 20;
+
+        if (!$authUser) {
+            $posts = Post::with(['user.profile', 'media'])
+                ->withCount(['likes', 'replies', 'reposts'])
+                ->whereNull('parent_post_id')
+                ->latest()
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            $posts->getCollection()->transform(fn($post) => $this->formatPost($post, null));
+
+            return response()->json([
+                'success' => true,
+                'posts'   => $posts->items(),
+                'meta'    => [
+                    'current_page' => $posts->currentPage(),
+                    'last_page'    => $posts->lastPage(),
+                    'total'        => $posts->total(),
+                    'per_page'     => $perPage,
+                ],
+            ]);
+        }
+
+        $followingIds = $authUser->following()->pluck('users.id')->toArray();
+
+        $followingPosts = collect();
+        if (!empty($followingIds)) {
+            $followingPosts = Post::with(['user.profile', 'media'])
+                ->withCount(['likes', 'replies', 'reposts'])
+                ->whereNull('parent_post_id')
+                ->whereIn('user_id', $followingIds)
+                ->where('created_at', '>=', now()->subDays(7))
+                ->get();
+        }
+
+        $trendingPosts = Post::with(['user.profile', 'media'])
+            ->withCount(['likes', 'replies', 'reposts'])
+            ->whereNull('parent_post_id')
+            ->where('created_at', '>=', now()->subDays(3))
+            ->get();
+
+        $allPosts = $followingPosts->concat($trendingPosts)->unique('id');
+
+        $scored = $allPosts->map(function ($post) use ($followingIds) {
+            $score = ($post->likes_count   * 3)
+                   + ($post->replies_count  * 5)
+                   + ($post->reposts_count  * 8);
+
+            $hoursOld   = max(now()->diffInHours($post->created_at), 1);
+            $finalScore = $score / $hoursOld;
+
+            if (in_array($post->user_id, $followingIds)) {
+                $finalScore += 10;
+            }
+
+            $post->_score = $finalScore;
+            return $post;
+        })->sortByDesc('_score')->values();
+
+        $total    = $scored->count();
+        $lastPage = (int) ceil($total / $perPage);
+        $items    = $scored->forPage($page, $perPage)->values();
+
+        $formatted = $items->map(fn($post) => $this->formatPost($post, $authUser));
+
+        return response()->json([
+            'success' => true,
+            'posts'   => $formatted,
+            'meta'    => [
+                'current_page' => $page,
+                'last_page'    => max($lastPage, 1),
+                'total'        => $total,
+                'per_page'     => $perPage,
+            ],
+        ]);
+    }
 
     public function profilePosts(Request $request)
     {
