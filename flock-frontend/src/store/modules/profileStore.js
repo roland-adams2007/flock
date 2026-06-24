@@ -17,12 +17,14 @@ export const useProfileStore = create(
       isLoadingReposts: false,
       isLoadingFollowers: false,
       isLoadingFollowing: false,
+      isLoadingPeopleToFollow: false,
 
       isFollowing: false,
       isFollowLoading: false,
 
       followers: [],
       following: [],
+      peopleToFollow: [],
 
       error: null,
 
@@ -268,6 +270,48 @@ export const useProfileStore = create(
         }
       },
 
+      fetchPeopleToFollow: async (token) => {
+        set({ isLoadingPeopleToFollow: true });
+        try {
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const { data } = await axios.get(
+            `${API_BASE}/profile/people-to-follow`,
+            { headers },
+          );
+          if (data.success) {
+            set({
+              peopleToFollow: data.suggested_users,
+              isLoadingPeopleToFollow: false,
+            });
+          }
+        } catch (err) {
+          set({
+            error:
+              err.response?.data?.message || "Failed to load people to follow",
+            isLoadingPeopleToFollow: false,
+          });
+        }
+      },
+
+      fetchFollowing: async (username, token) => {
+        set({ isLoadingFollowing: true });
+        try {
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const { data } = await axios.get(
+            `${API_BASE}/profile/${username}/following`,
+            { headers },
+          );
+          if (data.success) {
+            set({ following: data.following, isLoadingFollowing: false });
+          }
+        } catch (err) {
+          set({
+            error: err.response?.data?.message || "Failed to load following",
+            isLoadingFollowing: false,
+          });
+        }
+      },
+
       updateProfile: async (username, form, token) => {
         try {
           const { data } = await axios.put(
@@ -319,6 +363,39 @@ export const useProfileStore = create(
         }
       },
 
+      // followUser: async (username, token) => {
+      //   set({ isFollowLoading: true });
+      //   try {
+      //     const { data } = await axios.post(
+      //       `${API_BASE}/profile/${username}/follow`,
+      //       {},
+      //       { headers: { Authorization: `Bearer ${token}` } },
+      //     );
+      //     if (data.success) {
+      //       set((state) => {
+      //         const profile = state.profiles[username];
+      //         if (!profile)
+      //           return { isFollowing: true, isFollowLoading: false };
+      //         return {
+      //           profiles: {
+      //             ...state.profiles,
+      //             [username]: {
+      //               ...profile,
+      //               followers_count: profile.followers_count + 1,
+      //             },
+      //           },
+      //           isFollowing: true,
+      //           isFollowLoading: false,
+      //         };
+      //       });
+      //     }
+      //   } catch (err) {
+      //     set({
+      //       error: err.response?.data?.message || "Failed to follow user",
+      //       isFollowLoading: false,
+      //     });
+      //   }
+      // },
       followUser: async (username, token) => {
         set({ isFollowLoading: true });
         try {
@@ -328,22 +405,19 @@ export const useProfileStore = create(
             { headers: { Authorization: `Bearer ${token}` } },
           );
           if (data.success) {
-            set((state) => {
-              const profile = state.profiles[username];
-              if (!profile)
-                return { isFollowing: true, isFollowLoading: false };
-              return {
-                profiles: {
-                  ...state.profiles,
-                  [username]: {
-                    ...profile,
-                    followers_count: profile.followers_count + 1,
-                  },
-                },
+            const headers = { Authorization: `Bearer ${token}` };
+            const peopleResponse = await axios.get(
+              `${API_BASE}/profile/people-to-follow`,
+              { headers },
+            );
+
+            if (peopleResponse.data.success) {
+              set({
+                peopleToFollow: peopleResponse.data.suggested_users,
                 isFollowing: true,
                 isFollowLoading: false,
-              };
-            });
+              });
+            }
           }
         } catch (err) {
           set({

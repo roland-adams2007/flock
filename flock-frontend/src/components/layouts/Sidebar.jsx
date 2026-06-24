@@ -1,6 +1,10 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
-import { useAuthStore } from "../../store/store";
+import { useState, useEffect } from "react";
+import {
+  useAuthStore,
+  usePostStore,
+  useNotificationStore,
+} from "../../store/store";
 import logo from "../../assets/logo.png";
 
 function SidebarSkeleton() {
@@ -68,6 +72,17 @@ const Sidebar = () => {
   const [composeText, setComposeText] = useState("");
 
   const { token, me, isAuthenticated, isInitializing, logout } = useAuthStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
+  const { createPost, prependToFeed } = usePostStore();
+  const [isPosting, setIsPosting] = useState(false);
+  const [postError, setPostError] = useState("");
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchNotifications(token, 1);
+    }
+  }, [isAuthenticated, token]);
+
   const isActive = (path) => location.pathname === path;
 
   const navItems = [
@@ -91,7 +106,7 @@ const Sidebar = () => {
     {
       label: "Notifications",
       path: "/notifications",
-      badge: 4,
+      badge: unreadCount,
       requiresAuth: true,
       icon: (
         <svg
@@ -109,7 +124,7 @@ const Sidebar = () => {
     },
     {
       label: "Following",
-      path: `/${me?.username}/follows`,
+      path: isAuthenticated && me?.username ? `/${me?.username}/follows` : null,
       requiresAuth: true,
       icon: (
         <svg
@@ -129,7 +144,7 @@ const Sidebar = () => {
     },
     {
       label: "Profile",
-      path: me?.username ? `/${me?.username}` : null,
+      path: isAuthenticated && me?.username ? `/${me?.username}` : null,
       requiresAuth: true,
       icon: (
         <svg
@@ -145,23 +160,6 @@ const Sidebar = () => {
         </svg>
       ),
     },
-    {
-      label: "Saved",
-      path: "/saved",
-      requiresAuth: true,
-      icon: (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-        >
-          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-        </svg>
-      ),
-    },
   ];
 
   const handleNavClick = (item) => {
@@ -174,6 +172,23 @@ const Sidebar = () => {
       return;
     }
     if (item.path) navigate(item.path);
+  };
+
+  const handlePost = async () => {
+    if (!composeText.trim() || isPosting) return;
+    setIsPosting(true);
+    setPostError("");
+    const result = await createPost(composeText.trim(), token, me?.username);
+    setIsPosting(false);
+    if (result?.error) {
+      setPostError("Failed to post. Please try again.");
+      return;
+    }
+    if (result?.success && result?.post) {
+      prependToFeed(result.post);
+    }
+    setComposeText("");
+    setComposeOpen(false);
   };
 
   return (
@@ -195,7 +210,7 @@ const Sidebar = () => {
               >
                 {item.icon}
                 {item.label}
-                {item.badge && isAuthenticated && (
+                {item.badge && isAuthenticated && item.badge > 0 && (
                   <span className="badge">{item.badge}</span>
                 )}
               </Link>
@@ -209,7 +224,7 @@ const Sidebar = () => {
             >
               {item.icon}
               {item.label}
-              {item.badge && isAuthenticated && (
+              {item.badge && isAuthenticated && item.badge > 0 && (
                 <span className="badge">{item.badge}</span>
               )}
             </button>
@@ -346,7 +361,10 @@ const Sidebar = () => {
         <div
           className="modal-bg open"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setComposeOpen(false);
+            if (e.target === e.currentTarget) {
+              setComposeOpen(false);
+              setPostError("");
+            }
           }}
         >
           <div className="modal-box">
@@ -356,7 +374,10 @@ const Sidebar = () => {
               </div>
               <button
                 className="close-btn"
-                onClick={() => setComposeOpen(false)}
+                onClick={() => {
+                  setComposeOpen(false);
+                  setPostError("");
+                }}
               >
                 ✕
               </button>
@@ -412,30 +433,78 @@ const Sidebar = () => {
                     marginTop: "0.75rem",
                   }}
                 >
-                  <button className="icon-btn">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                  </button>
-                  <button
-                    className="post-btn-sm"
-                    onClick={() => {
-                      setComposeText("");
-                      setComposeOpen(false);
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
                     }}
-                    style={{ padding: "0.5rem 1.4rem", fontSize: "0.875rem" }}
                   >
-                    Post it
-                  </button>
+                    <button className="icon-btn">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                      </svg>
+                    </button>
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        color:
+                          composeText.length > 280 ? "red" : "var(--text3)",
+                      }}
+                    >
+                      {composeText.length}/280
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: "0.35rem",
+                    }}
+                  >
+                    {postError && (
+                      <span style={{ fontSize: "0.75rem", color: "red" }}>
+                        {postError}
+                      </span>
+                    )}
+                    <button
+                      className="post-btn-sm"
+                      onClick={handlePost}
+                      disabled={
+                        !composeText.trim() ||
+                        isPosting ||
+                        composeText.length > 280
+                      }
+                      style={{
+                        padding: "0.5rem 1.4rem",
+                        fontSize: "0.875rem",
+                        opacity:
+                          !composeText.trim() ||
+                          isPosting ||
+                          composeText.length > 280
+                            ? 0.5
+                            : 1,
+                        cursor:
+                          !composeText.trim() ||
+                          isPosting ||
+                          composeText.length > 280
+                            ? "not-allowed"
+                            : "pointer",
+                      }}
+                    >
+                      {isPosting ? "Posting…" : "Post it"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -20,6 +20,11 @@ export const usePostStore = create(
       feedPage: 1,
       feedLastPage: 1,
 
+      searchUsers: [],
+      searchPosts: [],
+      isSearching: false,
+      searchError: null,
+
       fetchPost: async (postId, token) => {
         set({
           isLoadingPost: true,
@@ -97,6 +102,49 @@ export const usePostStore = create(
           set({ isLoadingFeed: false });
         }
       },
+
+      search: async (q, token) => {
+        const query = q.trim();
+        if (!query) {
+          set({
+            searchUsers: [],
+            searchPosts: [],
+            isSearching: false,
+            searchError: null,
+          });
+          return;
+        }
+        set({ isSearching: true, searchError: null });
+        try {
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const { data } = await axios.get(`${API_BASE}/search`, {
+            headers,
+            params: { q: query },
+          });
+          if (data.success) {
+            set({
+              searchUsers: data.users ?? [],
+              searchPosts: data.posts ?? [],
+              isSearching: false,
+            });
+          } else {
+            set({ isSearching: false });
+          }
+        } catch (err) {
+          set({
+            searchError: err.response?.data?.message || "Search failed",
+            isSearching: false,
+          });
+        }
+      },
+
+      clearSearch: () =>
+        set({
+          searchUsers: [],
+          searchPosts: [],
+          isSearching: false,
+          searchError: null,
+        }),
 
       createPost: async (content, token, username, mediaUrls = []) => {
         try {
