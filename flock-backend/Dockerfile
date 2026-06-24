@@ -1,3 +1,67 @@
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --ignore-platform-reqs
+
+COPY . .
+
+RUN composer dump-autoload --optimize --no-dev
+
+FROM php:8.3-fpm-alpine
+
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    gettext \
+    bash \
+    curl \
+    libpng \
+    libjpeg-turbo \
+    libwebp \
+    freetype \
+    postgresql-libs \
+    icu-libs \
+    oniguruma
+
+RUN apk add --no-cache --virtual .build-deps \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    libwebp-dev \
+    freetype-dev \
+    postgresql-dev \
+    icu-dev \
+    oniguruma-dev \
+    $PHPIZE_DEPS \
+    && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
+    && docker-php-ext-install -j$(nproc) \
+        gd \
+        pdo_pgsql \
+        pgsql \
+        intl \
+        mbstring \
+        bcmath \
+        opcache \
+    && apk del .build-deps
+
+WORKDIR /var/www/html
+
+COPY --from=vendor /app /var/www/html
+
+RUN mkdir -p /var/www/html/storage/framework/cache \
+    /var/www/html/storage/framework/sessions \
+    /var/www/html/storage/framework/views \
+    /var/www/html/storage/logs \
+    /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
 # 1. Write the template directly into Alpine's default Nginx configuration folder
 RUN cat <<'EOF' > /etc/nginx/http.d/default.conf.template
 server {
@@ -71,7 +135,6 @@ set -e
 
 export PORT="${PORT:-10000}"
 
-# Updated paths here:
 envsubst '${PORT}' < /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf
 
 if [ ! -f /var/www/html/.env ] && [ -f /var/www/html/.env.example ]; then
