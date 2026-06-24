@@ -7,6 +7,7 @@ use App\Models\Repost;
 use App\Models\User;
 use App\Models\Post;
 use App\Models\PostMedia;
+use App\Notifications\SocialNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -14,7 +15,7 @@ use Intervention\Image\Laravel\Facades\Image;
 
 class PostController extends Controller
 {
-    private function authUser(Request $request): ?User
+    public static function authUser(Request $request): ?User
     {
         $token = $request->bearerToken();
         if (!$token) return null;
@@ -60,49 +61,6 @@ class PostController extends Controller
         ];
     }
 
-    // public function uploadMedia(Request $request)
-    // {
-    //     $user = $this->authUser($request);
-    //     if (!$user) {
-    //         return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
-    //     }
-
-    //     $validator = validator($request->all(), [
-    //         'file' => 'required|file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi|max:51200',
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         $errors = $validator->errors()->all();
-    //         $message = 'Invalid file.';
-    //         foreach ($errors as $error) {
-    //             if (str_contains(strtolower($error), 'mimes')) {
-    //                 $message = 'Unsupported file type. Allowed: JPG, PNG, GIF, WEBP, MP4, MOV, AVI.';
-    //             } elseif (str_contains(strtolower($error), 'max')) {
-    //                 $message = 'File too large. Max 50 MB.';
-    //             } elseif (str_contains(strtolower($error), 'required')) {
-    //                 $message = 'No file provided.';
-    //             }
-    //         }
-    //         return response()->json(['success' => false, 'message' => $message, 'errors' => $errors], 422);
-    //     }
-
-    //     try {
-    //         $file = $request->file('file');
-    //         $type = str_starts_with($file->getMimeType(), 'video') ? 'video' : 'image';
-    //         $path = $file->store('media', 's3');
-
-    //         if (!$path) {
-    //             return response()->json(['success' => false, 'message' => 'Failed to save file.'], 500);
-    //         }
-
-    //         $url = Storage::disk('s3')->url($path);
-
-    //         return response()->json(['success' => true, 'url' => $url, 'type' => $type], 201);
-    //     } catch (\Exception $e) {
-    //         return response()->json(['success' => false, 'message' => 'Upload failed.'], 500);
-    //     }
-    // }
-
     public function uploadMedia(Request $request)
     {
         $user = $this->authUser($request);
@@ -140,7 +98,6 @@ class PostController extends Controller
             $disk = Storage::disk('s3');
 
             if ($isImage) {
-                // If it's a GIF, don't re-encode it to JPEG (which destroys animation)
                 if ($mimeType === 'image/gif') {
                     $path = "media/{$uniqueId}.gif";
                     $disk->putFileAs('media', $file, "{$uniqueId}.gif", [
@@ -149,7 +106,6 @@ class PostController extends Controller
                         'ContentType'  => 'image/gif',
                     ]);
                 } else {
-                    // Convert PNG, WebP, and standard JPEGs into highly optimized JPEGs
                     $processed = Image::read($file)
                         ->scaleDown(width: 1920)
                         ->toJpeg(80);
@@ -165,10 +121,8 @@ class PostController extends Controller
 
                 $finalUrl = $disk->url($path);
             } else {
-                // Handle all your allowed video formats natively (mp4, webm, ogg, quicktime)
                 $extension = strtolower($file->getClientOriginalExtension());
 
-                // Fallback extension check if clientOriginalExtension comes back empty
                 if (empty($extension)) {
                     $extension = match ($mimeType) {
                         'video/quicktime' => 'mov',
@@ -201,8 +155,6 @@ class PostController extends Controller
             ], 500);
         }
     }
-
-
 
     public function store(Request $request)
     {
@@ -243,27 +195,35 @@ class PostController extends Controller
 
     public function show(Request $request, $id)
     {
-        $authUser = $this->authUser($request);
+        try {
+            $authUser = $this->authUser($request);
 
-        $post = Post::with(['user.profile', 'media'])
-            ->withCount(['likes', 'replies', 'reposts'])
-            ->findOrFail($id);
-
-        $parent = null;
-        if ($post->parent_post_id) {
-            $parentPost = Post::with(['user.profile', 'media'])
+            $post = Post::with(['user.profile', 'media'])
                 ->withCount(['likes', 'replies', 'reposts'])
-                ->find($post->parent_post_id);
-            if ($parentPost) {
-                $parent = $this->formatPost($parentPost, $authUser);
-            }
-        }
+                ->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'post'    => $this->formatPost($post, $authUser),
-            'parent'  => $parent,
-        ]);
+            $parent = null;
+            if ($post->parent_post_id) {
+                $parentPost = Post::with(['user.profile', 'media'])
+                    ->withCount(['likes', 'replies', 'reposts'])
+                    ->find($post->parent_post_id);
+                if ($parentPost) {
+                    $parent = $this->formatPost($parentPost, $authUser);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'post'    => $this->formatPost($post, $authUser),
+                'parent'  => $parent,
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Post not found.',
+                'error' => 'The requested post does not exist.'
+            ], 404);
+        }
     }
 
     public function update(Request $request, $id)
@@ -301,143 +261,208 @@ class PostController extends Controller
 
     public function replies(Request $request, $id)
     {
-        $authUser = $this->authUser($request);
+        try {
+            $authUser = $this->authUser($request);
 
-        Post::findOrFail($id);
+            $post = Post::findOrFail($id);
 
-        $page    = (int) ($request->query('page', 1));
-        $perPage = 20;
+            $page    = (int) ($request->query('page', 1));
+            $perPage = 20;
 
-        $paginator = Post::where('parent_post_id', $id)
-            ->with(['user.profile', 'media'])
-            ->withCount(['likes', 'replies', 'reposts'])
-            ->latest()
-            ->paginate($perPage, ['*'], 'page', $page);
+            $paginator = Post::where('parent_post_id', $id)
+                ->with(['user.profile', 'media'])
+                ->withCount(['likes', 'replies', 'reposts'])
+                ->latest()
+                ->paginate($perPage, ['*'], 'page', $page);
 
-        $paginator->getCollection()->transform(fn($post) => $this->formatPost($post, $authUser));
+            $paginator->getCollection()->transform(fn($post) => $this->formatPost($post, $authUser));
 
-        return response()->json([
-            'success'  => true,
-            'comments' => $paginator->items(),
-            'meta'     => [
-                'current_page' => $paginator->currentPage(),
-                'last_page'    => $paginator->lastPage(),
-                'total'        => $paginator->total(),
-                'per_page'     => $perPage,
-            ],
-        ]);
+            return response()->json([
+                'success'  => true,
+                'comments' => $paginator->items(),
+                'meta'     => [
+                    'current_page' => $paginator->currentPage(),
+                    'last_page'    => $paginator->lastPage(),
+                    'total'        => $paginator->total(),
+                    'per_page'     => $perPage,
+                ],
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Post not found.',
+                'error' => 'The requested post does not exist.'
+            ], 404);
+        }
     }
 
     public function storeReply(Request $request, $id)
     {
-        $user = $this->authUser($request);
-        if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
+        try {
+            $user = $this->authUser($request);
+            if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
 
-        Post::findOrFail($id);
+            $parentPost = Post::findOrFail($id);
 
-        $request->validate([
-            'content' => 'required|string|max:500',
-            'media'   => 'nullable|array|max:4',
-            'media.*.url'  => 'required_with:media|string|url',
-            'media.*.type' => 'required_with:media|in:image,video',
-        ]);
+            $request->validate([
+                'content' => 'required|string|max:500',
+                'media'   => 'nullable|array|max:4',
+                'media.*.url'  => 'required_with:media|string|url',
+                'media.*.type' => 'required_with:media|in:image,video',
+            ]);
 
-        $reply = Post::create([
-            'user_id'        => $user->id,
-            'content'        => $request->content,
-            'parent_post_id' => $id,
-        ]);
+            $reply = Post::create([
+                'user_id'        => $user->id,
+                'content'        => $request->content,
+                'parent_post_id' => $id,
+            ]);
 
-        if ($request->has('media') && is_array($request->media)) {
-            foreach ($request->media as $m) {
-                if (!empty($m['url'])) {
-                    PostMedia::create([
-                        'post_id' => $reply->id,
-                        'path'    => $m['url'],
-                        'type'    => $m['type'] ?? 'image',
-                    ]);
+            if ($request->has('media') && is_array($request->media)) {
+                foreach ($request->media as $m) {
+                    if (!empty($m['url'])) {
+                        PostMedia::create([
+                            'post_id' => $reply->id,
+                            'path'    => $m['url'],
+                            'type'    => $m['type'] ?? 'image',
+                        ]);
+                    }
                 }
             }
+
+            if ($parentPost->user_id !== $user->id) {
+                $parentPost->user->notify(new SocialNotification($user, 'reply', $reply));
+            }
+
+            $reply->load('user.profile', 'media');
+            $reply->loadCount(['likes', 'replies', 'reposts']);
+
+            return response()->json([
+                'success' => true,
+                'comment' => $this->formatPost($reply, $user),
+            ], 201);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Post not found.',
+                'error' => 'The requested post does not exist.'
+            ], 404);
         }
-
-        $reply->load('user.profile', 'media');
-        $reply->loadCount(['likes', 'replies', 'reposts']);
-
-        return response()->json([
-            'success' => true,
-            'comment' => $this->formatPost($reply, $user),
-        ], 201);
     }
 
     public function like(Request $request, $id)
     {
-        $user = $this->authUser($request);
-        if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
+        try {
+            $user = $this->authUser($request);
+            if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
 
-        $post = Post::findOrFail($id);
+            $post = Post::findOrFail($id);
 
-        $exists = Like::where('user_id', $user->id)
-            ->where('likeable_id', $post->id)
-            ->where('likeable_type', Post::class)
-            ->exists();
+            $exists = Like::where('user_id', $user->id)
+                ->where('likeable_id', $post->id)
+                ->where('likeable_type', Post::class)
+                ->exists();
 
-        if ($exists) {
-            return response()->json(['success' => false, 'message' => 'Already liked.'], 422);
+            if ($exists) {
+                return response()->json(['success' => false, 'message' => 'Already liked.'], 422);
+            }
+
+            Like::create([
+                'user_id'       => $user->id,
+                'likeable_id'   => $post->id,
+                'likeable_type' => Post::class,
+            ]);
+
+            if ($post->user_id !== $user->id) {
+                $post->user->notify(new SocialNotification($user, 'like', $post));
+            }
+
+            return response()->json(['success' => true]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Post not found.',
+                'error' => 'The requested post does not exist.'
+            ], 404);
         }
-
-        Like::create([
-            'user_id'       => $user->id,
-            'likeable_id'   => $post->id,
-            'likeable_type' => Post::class,
-        ]);
-
-        return response()->json(['success' => true]);
     }
 
     public function unlike(Request $request, $id)
     {
-        $user = $this->authUser($request);
-        if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
+        try {
+            $user = $this->authUser($request);
+            if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
 
-        Like::where('user_id', $user->id)
-            ->where('likeable_id', $id)
-            ->where('likeable_type', Post::class)
-            ->delete();
+            $post = Post::findOrFail($id);
 
-        return response()->json(['success' => true]);
+            Like::where('user_id', $user->id)
+                ->where('likeable_id', $id)
+                ->where('likeable_type', Post::class)
+                ->delete();
+
+            return response()->json(['success' => true]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Post not found.',
+                'error' => 'The requested post does not exist.'
+            ], 404);
+        }
     }
 
     public function repost(Request $request, $id)
     {
-        $user = $this->authUser($request);
-        if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
+        try {
+            $user = $this->authUser($request);
+            if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
 
-        $post = Post::with(['user.profile', 'media'])
-            ->withCount(['likes', 'replies', 'reposts'])
-            ->findOrFail($id);
+            $post = Post::with(['user.profile', 'media'])
+                ->withCount(['likes', 'replies', 'reposts'])
+                ->findOrFail($id);
 
-        $exists = Repost::where('user_id', $user->id)->where('post_id', $post->id)->exists();
-        if ($exists) {
-            return response()->json(['success' => false, 'message' => 'Already reposted.'], 422);
+            $exists = Repost::where('user_id', $user->id)->where('post_id', $post->id)->exists();
+            if ($exists) {
+                return response()->json(['success' => false, 'message' => 'Already reposted.'], 422);
+            }
+
+            Repost::create(['user_id' => $user->id, 'post_id' => $post->id]);
+
+            if ($post->user_id !== $user->id) {
+                $post->user->notify(new SocialNotification($user, 'repost', $post));
+            }
+
+            $post->loadCount(['likes', 'replies', 'reposts']);
+
+            return response()->json([
+                'success' => true,
+                'post'    => $this->formatPost($post, $user),
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Post not found.',
+                'error' => 'The requested post does not exist.'
+            ], 404);
         }
-
-        Repost::create(['user_id' => $user->id, 'post_id' => $post->id]);
-        $post->loadCount(['likes', 'replies', 'reposts']);
-
-        return response()->json([
-            'success' => true,
-            'post'    => $this->formatPost($post, $user),
-        ]);
     }
 
     public function unrepost(Request $request, $id)
     {
-        $user = $this->authUser($request);
-        if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
+        try {
+            $user = $this->authUser($request);
+            if (!$user) return response()->json(['error' => 'Unauthenticated.'], 401);
 
-        Repost::where('user_id', $user->id)->where('post_id', $id)->delete();
+            $post = Post::findOrFail($id);
 
-        return response()->json(['success' => true]);
+            Repost::where('user_id', $user->id)->where('post_id', $id)->delete();
+
+            return response()->json(['success' => true]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Post not found.',
+                'error' => 'The requested post does not exist.'
+            ], 404);
+        }
     }
 
     public function feed(Request $request)
@@ -446,7 +471,6 @@ class PostController extends Controller
         $page     = (int) ($request->query('page', 1));
         $perPage  = 20;
 
-        // 1. Guest Feed: Simple chronological fallback
         if (!$authUser) {
             $posts = Post::with(['user.profile', 'media'])
                 ->withCount(['likes', 'replies', 'reposts'])
@@ -468,41 +492,46 @@ class PostController extends Controller
             ]);
         }
 
-
         $followingIds = $authUser->following()->pluck('users.id')->toArray();
-        $followingIdsList = !empty($followingIds) ? implode(',', array_map('intval', $followingIds)) : '0';
 
-        // 3. PostgreSQL Main Query Execution
+        if (empty($followingIds)) {
+            $posts = Post::with(['user.profile', 'media'])
+                ->withCount(['likes', 'replies', 'reposts'])
+                ->whereNull('parent_post_id')
+                ->latest()
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            $posts->getCollection()->transform(fn($post) => $this->formatPost($post, $authUser));
+
+            return response()->json([
+                'success' => true,
+                'posts'   => $posts->items(),
+                'meta'    => [
+                    'current_page' => $posts->currentPage(),
+                    'last_page'    => $posts->lastPage(),
+                    'total'        => $posts->total(),
+                    'per_page'     => $perPage,
+                ],
+            ]);
+        }
+
+        $followingIdsList = implode(',', array_map('intval', $followingIds));
+
         $posts = Post::query()
-            // FIX: Put select and selectRaw FIRST so withCount can append to them safely
             ->select('posts.*')
             ->selectRaw("
-            (
-                (
-                    ((SELECT COUNT(*) FROM likes WHERE likes.likeable_id = posts.id AND likes.likeable_type = 'App\\\\Models\\\\Post') * 3) +
-                    ((SELECT COUNT(*) FROM posts AS replies WHERE replies.parent_post_id = posts.id) * 5) +
-                    ((SELECT COUNT(*) FROM reposts WHERE reposts.post_id = posts.id) * 8)
-                ) / 
-                GREATEST(EXTRACT(EPOCH FROM (NOW() - posts.created_at)) / 3600, 1.0)
-            ) + (CASE WHEN posts.user_id IN ($followingIdsList) THEN 10.0 ELSE 0.0 END) AS algo_score
+            EXTRACT(EPOCH FROM posts.created_at) + 
+            (CASE WHEN posts.user_id IN ({$followingIdsList}) THEN 86400 ELSE 0 END) + 
+            (((SELECT COUNT(*) FROM likes WHERE likes.likeable_id = posts.id AND likes.likeable_type = 'App\\\\Models\\\\Post') * 3600) +
+            ((SELECT COUNT(*) FROM posts AS replies WHERE replies.parent_post_id = posts.id) * 7200) +
+            ((SELECT COUNT(*) FROM reposts WHERE reposts.post_id = posts.id) * 10800)) AS algo_score
         ")
             ->with(['user.profile', 'media'])
-            ->withCount(['likes', 'replies', 'reposts']) // Laravel now appends likes_count, replies_count, etc. safely
+            ->withCount(['likes', 'replies', 'reposts'])
             ->whereNull('parent_post_id')
-            // Enforce the overlapping time windows (Trending vs Following)
-            ->where(function ($q) use ($followingIds) {
-                $q->where('created_at', '>=', now()->subDays(3)); // Trending window
-                if (!empty($followingIds)) {
-                    $q->orWhere(function ($sub) use ($followingIds) {
-                        $sub->whereIn('user_id', $followingIds)
-                            ->where('created_at', '>=', now()->subDays(7)); // Following window
-                    });
-                }
-            })
             ->orderByDesc('algo_score')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        // 4. Transform only the 20 fetched items
         $posts->getCollection()->transform(fn($post) => $this->formatPost($post, $authUser));
 
         return response()->json([
@@ -516,7 +545,6 @@ class PostController extends Controller
             ],
         ]);
     }
-
 
     public function profilePosts(Request $request)
     {
@@ -656,5 +684,54 @@ class PostController extends Controller
         });
 
         return response()->json(['success' => true, 'reposted_posts' => $reposts]);
+    }
+
+    public function search(Request $request)
+    {
+        $request->validate(['q' => 'required|string|max:100']);
+
+        $authUser = $this->authUser($request);
+        $query = trim($request->query('q'));
+
+        if ($query === '') {
+            return response()->json(['success' => true, 'users' => [], 'posts' => []]);
+        }
+
+        $userLimit = (int) ($request->query('user_limit', 5));
+        $postLimit = (int) ($request->query('post_limit', 10));
+
+        $users = User::whereHas('profile', function ($q) use ($query) {
+            $q->where('username', 'ilike', "%{$query}%")
+                ->orWhere('display_name', 'ilike', "%{$query}%");
+        })
+            ->with('profile')
+            ->limit($userLimit)
+            ->get()
+            ->map(function ($u) use ($authUser) {
+                $isFollowing = false;
+                if ($authUser) {
+                    $isFollowing = $authUser->following()->where('users.id', $u->id)->exists();
+                }
+                return [
+                    'username'     => $u->profile->username,
+                    'display_name' => $u->profile->display_name,
+                    'avatar'       => $u->profile->avatar,
+                    'is_following' => $isFollowing,
+                ];
+            });
+
+        $posts = Post::where('content', 'ilike', "%{$query}%")
+            ->with(['user.profile', 'media'])
+            ->withCount(['likes', 'replies', 'reposts'])
+            ->latest()
+            ->limit($postLimit)
+            ->get()
+            ->map(fn($post) => $this->formatPost($post, $authUser));
+
+        return response()->json([
+            'success' => true,
+            'users'   => $users,
+            'posts'   => $posts,
+        ]);
     }
 }

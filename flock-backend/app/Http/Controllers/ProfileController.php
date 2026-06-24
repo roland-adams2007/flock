@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Notifications\SocialNotification;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class ProfileController extends Controller
@@ -192,6 +193,8 @@ class ProfileController extends Controller
 
         $authUser->following()->syncWithoutDetaching([$user->id]);
 
+        $user->notify(new SocialNotification($authUser, 'follow'));
+
         return response()->json(['success' => true]);
     }
 
@@ -205,5 +208,37 @@ class ProfileController extends Controller
         $authUser->following()->detach($user->id);
 
         return response()->json(['success' => true]);
+    }
+
+    public function peopleToFollow(Request $request)
+    {
+        $authUser = $this->authUser($request);
+
+        $followingIds = $authUser->following()->pluck('following_id')->toArray();
+
+        $suggestedUsers = User::whereNotIn('id', array_merge($followingIds, [$authUser->id]))
+            ->with('profile')
+            ->inRandomOrder()
+            ->limit(5)
+            ->get()
+            ->map(function ($user) use ($authUser) {
+                $isFollowing = $authUser
+                    ? $authUser->following()
+                    ->where('following_id', $user->id)
+                    ->exists()
+                    : false;
+
+                return [
+                    'username' => $user->profile->username,
+                    'display_name' => $user->profile->display_name,
+                    'avatar' => $user->profile->avatar,
+                    'is_following' => $isFollowing,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'suggested_users' => $suggestedUsers
+        ]);
     }
 }
