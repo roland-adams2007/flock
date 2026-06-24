@@ -1,68 +1,5 @@
-FROM composer:2 AS vendor
-
-WORKDIR /app
-
-COPY composer.json composer.lock ./
-
-RUN composer install \
-    --no-dev \
-    --no-scripts \
-    --no-autoloader \
-    --ignore-platform-reqs
-
-COPY . .
-
-RUN composer dump-autoload --optimize --no-dev
-
-FROM php:8.3-fpm-alpine
-
-RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    gettext \
-    bash \
-    curl \
-    libpng \
-    libjpeg-turbo \
-    libwebp \
-    freetype \
-    postgresql-libs \
-    icu-libs \
-    oniguruma
-
-RUN apk add --no-cache --virtual .build-deps \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    libwebp-dev \
-    freetype-dev \
-    postgresql-dev \
-    icu-dev \
-    oniguruma-dev \
-    $PHPIZE_DEPS \
-    && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
-    && docker-php-ext-install -j$(nproc) \
-        gd \
-        pdo_pgsql \
-        pgsql \
-        intl \
-        mbstring \
-        bcmath \
-        opcache \
-    && apk del .build-deps
-
-WORKDIR /var/www/html
-
-COPY --from=vendor /app /var/www/html
-
-RUN mkdir -p /var/www/html/storage/framework/cache \
-    /var/www/html/storage/framework/sessions \
-    /var/www/html/storage/framework/views \
-    /var/www/html/storage/logs \
-    /var/www/html/bootstrap/cache \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
-RUN cat <<'EOF' > /etc/nginx/conf.d/default.conf.template
+# 1. Write the template directly into Alpine's default Nginx configuration folder
+RUN cat <<'EOF' > /etc/nginx/http.d/default.conf.template
 server {
     listen ${PORT};
     server_name _;
@@ -100,7 +37,8 @@ server {
 }
 EOF
 
-RUN cat <<'EOF' > /etc/supervisor/conf.d/supervisord.conf
+# 2. Create the missing supervisor folder before writing the configuration
+RUN mkdir -p /etc/supervisor/conf.d && cat <<'EOF' > /etc/supervisor/conf.d/supervisord.conf
 [supervisord]
 nodaemon=true
 user=root
@@ -126,13 +64,15 @@ stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 EOF
 
+# 3. Update the entrypoint to use the correct http.d paths
 RUN cat <<'EOF' > /entrypoint.sh
 #!/bin/sh
 set -e
 
 export PORT="${PORT:-10000}"
 
-envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+# Updated paths here:
+envsubst '${PORT}' < /etc/nginx/http.d/default.conf.template > /etc/nginx/http.d/default.conf
 
 if [ ! -f /var/www/html/.env ] && [ -f /var/www/html/.env.example ]; then
     cp /var/www/html/.env.example /var/www/html/.env
